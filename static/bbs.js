@@ -12,6 +12,7 @@ bbsApp.config(function($routeProvider) {
 		when('/threads', {templateUrl: '/static/threads.html', controller: ThreadsCtrl}).
 		when('/threads/:query', {templateUrl: '/static/threads.html', controller: ThreadsCtrl}).
 		when('/get/:id', {templateUrl: '/static/thread.html', controller: ThreadCtrl}).
+		when('/get/:id/:filter', {templateUrl: '/static/thread.html', controller: ThreadCtrl}).
 		otherwise({redirectTo: '/servers'});
 });
 
@@ -21,6 +22,8 @@ function BBS(url, $http, $rootScope, $location) {
 	this.desc = "Pinging...";
 	this.access = {};
 	this.lists = [];
+	this.options = [];
+	this.formats = [];
 
 	this.loggedIn = false;
 	this.username = null;
@@ -54,6 +57,9 @@ function BBS(url, $http, $rootScope, $location) {
 		self.desc = data.desc;
 		self.access = data.access;
 		self.lists = data.lists || [];
+		self.options = data.options;
+		self.formats = data.format || ["text"];
+		self.defaultFormat = self.formats[0];
 
 		if (self.access.user && self.access.user["get"] || self.access.user["list"]) {
 			self.requiresLogin = true;
@@ -67,6 +73,8 @@ function BBS(url, $http, $rootScope, $location) {
 			desc: self.desc,
 			access: self.access,
 			lists: self.lists,
+			options: self.options,
+			formats: self.formats,
 			session: self.session,
 			loggedIn: self.loggedIn,
 			requiresLogin: self.requiresLogin,
@@ -80,10 +88,17 @@ function BBS(url, $http, $rootScope, $location) {
 		self.desc = b.desc;
 		self.access = b.access;
 		self.lists = b.lists;
+		self.options = b.options;
+		self.formats = b.formats;
+		self.defaultFormat = b.formats[0];
 		self.session = b.session;
 		self.loggedIn = b.loggedIn;
 		self.requiresLogin = b.requiresLogin;
 		self.username = b.username;
+	}
+
+	this.supports = function(opt) {
+		return self.options.indexOf(opt) != -1;
 	}
 
 	this.hello = function() {
@@ -126,10 +141,11 @@ function BBS(url, $http, $rootScope, $location) {
 		self.send(cmd);
 	}
 
-	this.get = function(id, token, filter) {
+	this.get = function(id, token, filter, format) {
 		var cmd = {
 			cmd: "get",
-			id: id
+			id: id,
+			format: format || self.defaultFormat
 		}
 		if (token) {
 			cmd.token = token;
@@ -137,6 +153,7 @@ function BBS(url, $http, $rootScope, $location) {
 		if (filter) {
 			cmd.filter = filter;
 		}
+		console.log(cmd);
 		self.send(cmd);
 	}
 
@@ -288,7 +305,17 @@ function ThreadsCtrl($rootScope, $scope, $location, $routeParams) {
 		}
 	}
 
+	$scope.dangerous = function(tag) {
+		var danger = ["NWS", "NLS", "Spoilers"];
+		return danger.indexOf(tag) != -1;
+	}
+
+	$scope.view = function(thread) {
+		$location.path("/get/" + thread.id);
+	}
+
 	$scope.$on("#list", function(nm, evt) {
+		console.log(evt);
 		if (evt.data.threads) {
 			$scope.threads = $scope.threads.concat(evt.data.threads);
 			$scope.next = evt.data.next || null;
@@ -314,7 +341,7 @@ function ThreadCtrl($rootScope, $scope, $routeParams) {
 	$scope.id = $routeParams.id;
 	$scope.title = null;
 	$scope.closed = false;
-	$scope.filter = null;
+	$scope.filter = $routeParams.filter || null;
 	$scope.tags = null;
 	$scope.format = null;
 	$scope.messages = [];

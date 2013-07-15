@@ -3,6 +3,10 @@ body {
    font-weight: 300;
 }
 
+img {
+	max-width: 100%;
+}
+
 ul {
 	list-style-type: none;
 	padding: 0;
@@ -89,4 +93,24 @@ div.clickyBox hr {
 	color: white;
 	background-color: white;
 	height: 1px;
+}
+
+ul.inlineList {
+	display: inline;
+}
+
+ul.inlineList li {
+	display: inline;
+}
+
+ul.inlineList li:after {
+	content: " ・ ";
+}
+
+ul.inlineList li:last-child:after {
+	content: "";
+}
+
+.danger {
+	color: red !important;
 }

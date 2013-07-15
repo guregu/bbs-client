@@ -1,12 +1,17 @@
 <div class="topBar menuBar">
-	<span>
+	<span ng-show="filter">
+		<a ng-href="#/get/{{id}}">{{title}}</a> » Filtering by {{filter}}
+	</span> 
+	<span ng-show="!filter">
 		{{title}}
 	</span>
 </div>
 <div class="topBar menuBar" ng-show="tags">
-	<span ng-repeat="tag in tags">
-		<a ng-href="#/threads/{{tag}}">{{tag}}</a>
-	</span>
+	<ul class="inlineList">
+		<li ng-repeat="tag in tags">
+			<a ng-href="#/threads/{{tag}}">{{tag}}</a>
+		</li>
+	</ul>
 </div>
 <div class="errorBox" ng-show="error">
 	{{error}}
@@ -14,14 +19,20 @@
 <ul>
 	<li ng-repeat="message in messages">
 		<div class="clickyBox">
-			<span>
-				{{message.user}}
+			<span ng-init="canFilter=currentServer.supports('filter')">
+				<span ng-show="canFilter">
+					<a ng-href="#/get/{{id}}/{{message.user_id || message.user}}" style="text-decoration: none;">{{message.user}}</a>
+				</span>
+				<span ng-show="!canFilter">
+					{{message.user}}
+				</span>
 			</span>
 			<span class="pull-right">
 				{{message.date | ago}}
 			</span>
-			<hr>
-			{{message.body}}
+			<hr ng-show="message.body">
+			<span ng-show="format == 'html'" ng-bind-html-unsafe="message.body"></span>
+			<span ng-show="format == 'text' || !format">{{message.body}}</span>
 		</div>
 	</li>
 	<li ng-show="next">

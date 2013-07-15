@@ -12,15 +12,16 @@
 <ul>
 	<li ng-repeat="thread in threads">
 		<a ng-href="#/get/{{thread.id}}" class="fullBoxLink">
-			<div class="clickyBox">
+			<div class="clickyBox" ng-click="view(thread)">
 				<div>
 					<span><b>{{thread.title}}</b></span>
 				</div>
 				<div ng-show="thread.tags" style="text-align: right;">
-					<span ng-repeat="tag in thread.tags">
-						<a ng-href="#/threads/{{tag}}">{{tag}}</a>
-					</span>
-				</div>
+					<ul class="inlineList">
+						<li ng-repeat="tag in thread.tags">
+							<a ng-href="#/threads/{{tag}}" ng-class="{'danger': dangerous(tag)}">{{tag}}</a>
+						</li>
+					</ul>				</div>
 				<div style="text-align: right;" ng-show="thread.user">
 					{{thread.user}}
 				</div>
