@@ -63,6 +63,10 @@ div.errorBox {
 	padding: 0.5em;
 }
 
+a.fullBoxLink {
+	text-decoration: none;
+}
+
 div.clickyBox {
 	color: white;
 	background-color: black;
@@ -77,4 +81,12 @@ div.clickyBox a {
 
 div.clickyBox a:visited {
 	color: white;
+}
+
+div.clickyBox hr {
+	border: 0;
+	width: 100%;
+	color: white;
+	background-color: white;
+	height: 1px;
 }

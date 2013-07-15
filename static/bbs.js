@@ -11,6 +11,7 @@ bbsApp.config(function($routeProvider) {
 		when('/login', {templateUrl: '/static/login.html', controller: LoginCtrl}).
 		when('/threads', {templateUrl: '/static/threads.html', controller: ThreadsCtrl}).
 		when('/threads/:query', {templateUrl: '/static/threads.html', controller: ThreadsCtrl}).
+		when('/get/:id', {templateUrl: '/static/thread.html', controller: ThreadCtrl}).
 		otherwise({redirectTo: '/servers'});
 });
 
@@ -54,7 +55,7 @@ function BBS(url, $http, $rootScope, $location) {
 		self.access = data.access;
 		self.lists = data.lists || [];
 
-		if (self.access.user["get"] || self.access.user["list"]) {
+		if (self.access.user && self.access.user["get"] || self.access.user["list"]) {
 			self.requiresLogin = true;
 		}
 	} 
@@ -121,6 +122,20 @@ function BBS(url, $http, $rootScope, $location) {
 		}
 		if (token) {
 			cmd.token = token;
+		}
+		self.send(cmd);
+	}
+
+	this.get = function(id, token, filter) {
+		var cmd = {
+			cmd: "get",
+			id: id
+		}
+		if (token) {
+			cmd.token = token;
+		}
+		if (filter) {
+			cmd.filter = filter;
 		}
 		self.send(cmd);
 	}
@@ -283,12 +298,60 @@ function ThreadsCtrl($rootScope, $scope, $location, $routeParams) {
 
 	$scope.$on("!list", function(nm, evt) {
 		console.log(evt);
-		$scope.error = evt.data.msg;
+		$scope.error = evt.data.error;
 	});
 
 	if (!$rootScope.currentServer) {
 		$location.path("/servers");
 	} else {
 		$rootScope.currentServer.list("thread", $scope.query);
+	}
+}
+
+function ThreadCtrl($rootScope, $scope, $routeParams) {
+	$scope.error = null;
+
+	$scope.id = $routeParams.id;
+	$scope.title = null;
+	$scope.closed = false;
+	$scope.filter = null;
+	$scope.tags = null;
+	$scope.format = null;
+	$scope.messages = [];
+	$scope.next = null;
+
+	$scope.pushMessages = function(msgs) {
+		// TODO: don't blindly concat, instead keep an index of msgids
+		$scope.messages = $scope.messages.concat(msgs);
+	}
+
+	$scope.loadMore = function() {
+		$rootScope.currentServer.get($scope.id, $scope.next, $scope.filter);
+	}
+
+	$scope.$on("#msg", function(nm, evt) {
+		if (evt.data.id == $scope.id) {
+			console.log(evt.data);
+			$scope.title = evt.data.title;
+			$scope.closed = evt.data.closed;
+			$scope.filter = evt.data.filter;
+			$scope.tags = evt.data.tags || null;
+			$scope.format = evt.data.format;
+			$scope.next = evt.data.next || null;
+
+			$scope.pushMessages(evt.data.messages);
+		}
+	});
+
+	$scope.$on("!msg", function(nm, evt) {
+		if (evt.data.id == $scope.id) {
+			$scope.error = evt.data.error;
+		}
+	});
+
+	if (!$rootScope.currentServer) {
+		$location.path("/servers");
+	} else {
+		$rootScope.currentServer.get($scope.id, $scope.next, $scope.filter);
 	}
 }

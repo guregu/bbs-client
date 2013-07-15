@@ -11,28 +11,30 @@
 </div>
 <ul>
 	<li ng-repeat="thread in threads">
-		<div class="clickyBox">
-			<div>
-				<span><b>{{thread.title}}</b></span>
+		<a ng-href="#/get/{{thread.id}}" class="fullBoxLink">
+			<div class="clickyBox">
+				<div>
+					<span><b>{{thread.title}}</b></span>
+				</div>
+				<div ng-show="thread.tags" style="text-align: right;">
+					<span ng-repeat="tag in thread.tags">
+						<a ng-href="#/threads/{{tag}}">{{tag}}</a>
+					</span>
+				</div>
+				<div style="text-align: right;" ng-show="thread.user">
+					{{thread.user}}
+				</div>
+				<div style="text-align: right;">
+					<span ng-show="thread.posts">
+						<ng-pluralize count="{{thread.posts}}"
+						when="{'1': '1 post',
+							   'other': '{{thread.posts}} posts'}">
+					</span>
+					<span ng-show="thread.posts"> ・ </span> 
+					<span>{{thread.date | ago}}</span>
+				</div>
 			</div>
-			<div ng-show="thread.tags" style="text-align: right;">
-				<span ng-repeat="tag in thread.tags">
-					<a ng-href="#/threads/{{tag}}">{{tag}}</a>
-				</span>
-			</div>
-			<div style="text-align: right;" ng-show="thread.user">
-				{{thread.user}}
-			</div>
-			<div style="text-align: right;">
-				<span ng-show="thread.posts">
-					<ng-pluralize count="{{thread.posts}}"
-					when="{'1': '1 post',
-						   'other': '{{thread.posts}} posts'}">
-				</span>
-				<span ng-show="thread.posts"> ・ </span> 
-				<span>{{thread.date | ago}}</span>
-			</div>
-		</div>
+		</a>
 	</li>
 	<li ng-show="next">
 		<div class="clickyBox" ng-click="loadMore()">

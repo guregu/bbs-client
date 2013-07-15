@@ -1,0 +1,32 @@
+<div class="topBar menuBar">
+	<span>
+		{{title}}
+	</span>
+</div>
+<div class="topBar menuBar" ng-show="tags">
+	<span ng-repeat="tag in tags">
+		<a ng-href="#/threads/{{tag}}">{{tag}}</a>
+	</span>
+</div>
+<div class="errorBox" ng-show="error">
+	{{error}}
+</div>
+<ul>
+	<li ng-repeat="message in messages">
+		<div class="clickyBox">
+			<span>
+				{{message.user}}
+			</span>
+			<span class="pull-right">
+				{{message.date | ago}}
+			</span>
+			<hr>
+			{{message.body}}
+		</div>
+	</li>
+	<li ng-show="next">
+		<div class="clickyBox" ng-click="loadMore()">
+			Load more...
+		</div>
+	</li>
+</ul>
