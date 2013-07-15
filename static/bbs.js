@@ -9,6 +9,7 @@ bbsApp.config(function($routeProvider) {
 		when('/servers', {templateUrl: '/static/servers.html', controller: ServersCtrl}).
 		when('/login', {templateUrl: '/static/login.html', controller: LoginCtrl}).
 		when('/threads', {templateUrl: '/static/threads.html', controller: ThreadsCtrl}).
+		when('/threads/:query', {templateUrl: '/static/threads.html', controller: ThreadsCtrl}).
 		otherwise({redirectTo: '/servers'});
 });
 
@@ -17,6 +18,7 @@ function BBS(url, $http, $rootScope) {
 	this.name = url;
 	this.desc = "Pinging...";
 	this.access = {};
+	this.lists = [];
 
 	this.loggedIn = false;
 	this.session = null;
@@ -25,6 +27,9 @@ function BBS(url, $http, $rootScope) {
 	var self = this;
 
 	this.send = function(cmd) {
+		if (self.session) {
+			cmd.session = self.session;
+		}
 		$http.post(self.url, cmd).success(function(recv) {
 			$rootScope.$broadcast("#" + recv.cmd, {
 				server: self,
@@ -52,10 +57,48 @@ function BBS(url, $http, $rootScope) {
 		}
 	} 
 
+	this.serialize = function() {
+		return angular.toJson({
+			url: self.url,
+			name: self.name,
+			desc: self.desc,
+			access: self.access,
+			lists: self.lists,
+			session: self.session,
+			loggedIn: self.loggedIn,
+			requiresLogin: self.requiresLogin,
+		});
+	}
+
+	this.deserialze = function(b) {
+		self.url = b.url;
+		self.name = b.name;
+		self.desc = b.desc;
+		self.access = b.access;
+		self.lists = b.lists;
+		self.session = b.session;
+		self.loggedIn = b.loggedIn;
+		self.requiresLogin = b.requiresLogin;
+	}
+
 	this.hello = function() {
 		self.send({
 			cmd: "hello"
 		});
+	}
+
+	this.list = function(type, query, token) {
+		var cmd = {
+			cmd: "list",
+			type: type,
+		};
+		if (query) {
+			cmd.query = query;
+		}
+		if (token) {
+			cmd.token = token;
+		}
+		self.send(cmd);
 	}
 
 	this.home = function() {
@@ -65,7 +108,7 @@ function BBS(url, $http, $rootScope) {
 		if (self.lists.indexOf("board") != -1) {
 			return "/boards";
 		}
-		return "/list";
+		return "/threads";
 	}
 }
 
@@ -85,6 +128,9 @@ bbsApp.factory('Servers', function($rootScope, $http) {
 			});
 			return list;
 		},
+		get: function(url) {
+			return servers[url];
+		},
 		refresh: function() {
 			angular.forEach(servers, function(srv) {
 				srv.hello();
@@ -99,6 +145,21 @@ bbsApp.factory('Servers', function($rootScope, $http) {
 	return Servers;
 });
 
+bbsApp.filter('ago', function() {
+	return function(input) {
+		return moment(input).fromNow();
+	}
+})
+
+bbsApp.run(function ($rootScope, Servers) {
+	if (localStorage["current"]) {
+		var data = angular.fromJson(localStorage["current"]);
+		var srv = Servers.get(data.url);
+		srv.deserialze(data);
+		$rootScope.currentServer = srv;
+	}
+});
+
 function ServersCtrl($rootScope, $scope, $location, Servers) {
 	$scope.servers = Servers.list();
 	
@@ -108,6 +169,7 @@ function ServersCtrl($rootScope, $scope, $location, Servers) {
 
 	$scope.select = function(srv) {
 		$rootScope.currentServer = srv;
+		localStorage["current"] = srv.serialize();
 		$location.path(srv.home());
 	}
 
@@ -122,6 +184,30 @@ function LoginCtrl() {
 
 }
 
-function ThreadsCtrl() {
-	
+function ThreadsCtrl($rootScope, $scope, $location, $routeParams) {
+	$scope.threads = [];
+	$scope.error = null;
+	$scope.query = $routeParams.query || null;
+	$scope.next = null;
+
+	$scope.loadMore = function() {
+		if ($scope.next) {
+			$rootScope.currentServer.list("thread", $scope.query, $scope.next);
+		}
+	}
+
+	$scope.$on("#list", function(nm, evt) {
+		if (!evt.error && evt.data.threads) {
+			$scope.threads = $scope.threads.concat(evt.data.threads);
+			$scope.next = evt.data.next || null;
+		} else {
+			$scope.error = evt.data.msg;
+		}
+	});
+
+	if (!$rootScope.currentServer) {
+		$location.path("/servers");
+	} else {
+		$rootScope.currentServer.list("thread", $scope.query);
+	}
 }

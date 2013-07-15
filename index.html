@@ -6,6 +6,7 @@
 		<link rel="stylesheet" type="text/css" href="/static/bbs.css">
 
 
+		<script src="/static/vendor/moment.min.js"></script>
 		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.1.5/angular.js"></script>
 		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.1.5/angular-sanitize.js"></script>
 
@@ -16,14 +17,20 @@
 		<!-- top bar -->
 		<div class="topBar">
 			<span class="topBarHeader">
-				<b>bbs client</b>
+				<span ng-show="!currentServer">
+					<b>bbs client</b>
+				</span>
+				<span ng-show="currentServer">
+					{{currentServer.name}}
+				</span>
 			</span>
 			 |  
-			<span class="topBarItem">
-				<a href="#/servers">servers</a>
+			<span class="topBarItem" ng-show="currentServer">
+				<a href="#/threads">threads</a>
 			</span>
-			<span class="topBarItem">
-				<a href="#/servers">threads</a>
+
+			<span class="topBarItem pull-right">
+				<a href="#/servers">servers</a>
 			</span>
 		</div>
 		<!-- content -->

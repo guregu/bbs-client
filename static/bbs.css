@@ -6,6 +6,7 @@ body {
 ul {
 	list-style-type: none;
 	padding: 0;
+	margin-top: 0.5em;
 }
 
 .pull-left {
@@ -21,6 +22,10 @@ div.topBar {
 	border-style: solid;
 	border-width: 1px;
 	padding: 0.5em;
+}
+
+div.menuBar {
+	margin-top: 0.5em;
 }
 
 div.topBar a {
@@ -39,9 +44,18 @@ span.topBarItem {
 	margin-left: 1em;
 } 
 
-div.serverBox {
+div.clickyBox {
 	color: white;
 	background-color: black;
 	padding: 0.5em;
 	cursor: pointer;
+	margin-bottom: 0.5em;
+}
+
+div.clickyBox a {
+	color: white;
+}
+
+div.clickyBox a:visited {
+	color: white;
 }

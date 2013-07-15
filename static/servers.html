@@ -1,10 +1,10 @@
 <ul>
 	<li ng-repeat="server in servers">
-		<div class="serverBox">
+		<div class="clickyBox" ng-click="select(server)">
 			<div><b>{{server.name}}</b></div>
 			<div>
 				<span>{{server.desc}}<span>
-				<span class="pull-right"><i>{{server.url}} {{server}}</i></span>
+				<span class="pull-right"><i>{{server.url}}</i></span>
 			</div>
 		</div>
 	</li>
