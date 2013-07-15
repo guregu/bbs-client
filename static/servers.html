@@ -1,5 +1,11 @@
 <ul>
 	<li ng-repeat="server in servers">
-		{{server.name}} ({{server.url}})
+		<div class="serverBox">
+			<div><b>{{server.name}}</b></div>
+			<div>
+				<span>{{server.desc}}<span>
+				<span class="pull-right"><i>{{server.url}} {{server}}</i></span>
+			</div>
+		</div>
 	</li>
 </ul>
