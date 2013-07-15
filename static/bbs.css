@@ -17,6 +17,19 @@ ul {
 	float: right;
 }
 
+button {
+	background-color: white;
+	color: black;
+	border-style: solid;
+	border-width: 1px;
+	padding: 0.3em;
+	font-weight: bold;
+}
+
+button:hover {
+	background-color: Gainsboro;
+}
+
 div.topBar {
 	color: black;
 	border-style: solid;
@@ -43,6 +56,12 @@ span.topBarHeader {
 span.topBarItem {
 	margin-left: 1em;
 } 
+
+div.errorBox {
+	background-color: red;
+	color: black;
+	padding: 0.5em;
+}
 
 div.clickyBox {
 	color: white;

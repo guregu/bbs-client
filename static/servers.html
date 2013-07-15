@@ -8,4 +8,9 @@
 			</div>
 		</div>
 	</li>
+	<li ng-show="currentServer">
+		<div class="clickyBox" ng-click="logout()">
+			&times; Log out: {{currentServer.name}}
+		</div>
+	</li>
 </ul>
