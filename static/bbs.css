@@ -1,6 +1,8 @@
 body {
    font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; 
    font-weight: 300;
+   font-size: 10.5pt;
+   background: #cfcfcf;
 }
 
 img {
@@ -38,21 +40,20 @@ button:hover {
 
 div.topBar {
 	color: black;
-	border-style: solid;
-	border-width: 1px;
 	padding: 0.5em;
+	background-color: #4b73aa;
 }
 
 div.menuBar {
-	margin-top: 0.5em;
+	margin-top: 0.2em;
 }
 
 div.topBar a {
-	color: black;
+	color: white;
 }
 
 div.topBar a:visited {
-	color: black;
+	color: white;
 }
 
 span.topBarHeader {
@@ -74,12 +75,26 @@ a.fullBoxLink {
 	text-decoration: none;
 }
 
+div.messageTop {
+	background-color: #6896d5;
+	color: black;
+	padding: 0.5em;
+}
+
+div.messageTop a {
+	color: black;
+}
+
+div.messageTop a:visited {
+	color: black;
+}
+
 div.clickyBox {
-	color: white;
-	background-color: black;
+	color: black;
+	background-color: #dde3eb;
 	padding: 0.5em;
 	cursor: pointer;
-	margin-bottom: 0.5em;
+	margin-bottom: 0.2em;
 }
 
 div.clickyBox a {
@@ -117,3 +132,11 @@ ul.inlineList li:last-child:after {
 .danger {
 	color: red !important;
 }
+
+/* ETI compat */
+.quoted-message{border-left:2px solid #144fae;color:#144fae;padding-left:8px}
+.quoted-message .quoted-message{border-color:#006312;color:#006312}
+.quoted-message .quoted-message .quoted-message{border-color:#540000;color:#540000}
+.quoted-message .message-top{text-decoration:underline;}
+.quoted-message .message-top em{font-style:normal}
+.quoted-message .message-top a{color: inherit; text-decoration: none}

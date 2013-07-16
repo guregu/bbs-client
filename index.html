@@ -46,7 +46,7 @@
 				</span>
 			</span>
 		</div>
-		<div class="topBar menuBar">
+		<div class="topBar menuBar" ng-show="currentServer && currentServer.bookmarks.length > 0">
 			<ul class="inlineList">
 			<li ng-repeat="bookmark in currentServer.bookmarks">
 				<a ng-href="#/threads/{{bookmark.query}}">{{bookmark.name}}</a>

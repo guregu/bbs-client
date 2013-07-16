@@ -28,7 +28,7 @@ function BBS(url, $http, $rootScope, $location) {
 	this.lists = [];
 	this.options = [];
 	this.formats = [];
-	this.bookmarks = {};
+	this.bookmarks = [];
 
 	this.loggedIn = false;
 	this.username = null;

@@ -1,39 +1,40 @@
-<div class="topBar menuBar">
-	<span ng-show="filter">
-		<a ng-href="#/get/{{id}}">{{title}}</a> » Filtering by {{filter}}
-	</span> 
-	<span ng-show="!filter">
-		{{title}}
-	</span>
-</div>
-<div class="topBar menuBar" ng-show="tags">
-	<ul class="inlineList">
-		<li ng-repeat="tag in tags">
-			<a ng-href="#/threads/{{tag}}">{{tag}}</a>
-		</li>
-	</ul>
-</div>
 <div class="errorBox" ng-show="error">
 	{{error}}
 </div>
-<div style="text-align: right; margin-top: 0.5em;" ng-click="reply()">
-	<button>&#x270e; Reply</button>
+<div style="min-height: 2em; margin-top: 0.2em; text-align: justify; font-size: 15pt;">
+		<span ng-show="filter">
+			<a ng-href="#/get/{{id}}">{{title}}</a> » Filtering by {{filter}}
+		</span> 
+		<span ng-show="!filter">
+			{{title}}
+		</span>
+		<div style="font-size: 9pt;" ng-show="_tags">
+			<ul class="inlineList">
+				<li ng-repeat="tag in tags">
+					<a ng-href="#/threads/{{tag}}">{{tag}}</a>
+				</li>
+			</ul>
+		</div>
+</div>
+<div style="margin-top: 0.2em; text-align: right;" ng-click="reply()" ng-show="false">
+	<button ng-click="reply()">&#x270e;</button>
 </div>
 <ul>
 	<li ng-repeat="message in messages">
-		<div class="clickyBox">
-			<span ng-init="canFilter=currentServer.supports('filter')">
-				<span ng-show="canFilter">
-					<a ng-href="#/get/{{id}}/{{message.user_id || message.user}}" style="text-decoration: none;">{{message.user}}</a>
-				</span>
-				<span ng-show="!canFilter">
-					{{message.user}}
-				</span>
+		<div class="messageTop" ng-init="canFilter=currentServer.supports('filter')">
+			<span ng-show="canFilter">
+				<a ng-href="#/get/{{id}}/{{message.user_id || message.user}}" style="text-decoration: none;">{{message.user}}</a>
+			</span>
+			<span ng-show="!canFilter">
+				{{message.user}}
 			</span>
 			<span class="pull-right">
 				{{message.date | ago}}
 			</span>
-			<hr ng-show="message.body">
+		</div>
+		<div style="margin-top: 0.2em; margin-bottom: 0.2em;" ng-show="!message.body">
+		</div>
+		<div class="clickyBox" ng-show="message.body">
 			<span ng-show="format == 'html'" ng-bind-html-unsafe="message.body"></span>
 			<span ng-show="format == 'markdown'"><markdown ng-model="message.body"></markdown></span>
 			<span ng-show="format == 'text' || !format">{{message.body}}</span>
