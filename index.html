@@ -25,8 +25,8 @@
 					<a href="#/home" style="text-decoration: none;">{{currentServer.name}}</a>
 				</span>
 			</span>
-			<span class="topBarItem" ng-show="currentServer">
-				<a href="#/threads">threads</a>
+			<span class="topBarItem" ng-show="!currentServer.bookmarks || currentServer.bookmarks.length == 0">
+				<a href="#/threads">all</a>
 			</span>
 
 			<span class="pull-right">
@@ -45,6 +45,13 @@
 					<a href="#/servers">servers</a>
 				</span>
 			</span>
+		</div>
+		<div class="topBar menuBar">
+			<ul class="inlineList">
+			<li ng-repeat="bookmark in currentServer.bookmarks">
+				<a ng-href="#/threads/{{bookmark.query}}">{{bookmark.name}}</a>
+			</li>
+			</ul>
 		</div>
 		<!-- content -->
 		<div ng-view></div>

@@ -28,6 +28,7 @@ function BBS(url, $http, $rootScope, $location) {
 	this.lists = [];
 	this.options = [];
 	this.formats = [];
+	this.bookmarks = {};
 
 	this.loggedIn = false;
 	this.username = null;
@@ -78,6 +79,7 @@ function BBS(url, $http, $rootScope, $location) {
 			access: self.access,
 			lists: self.lists,
 			options: self.options,
+			bookmarks: self.bookmarks,
 			formats: self.formats,
 			session: self.session,
 			loggedIn: self.loggedIn,
@@ -95,6 +97,7 @@ function BBS(url, $http, $rootScope, $location) {
 		self.options = b.options;
 		self.formats = b.formats;
 		self.defaultFormat = b.formats[0];
+		self.bookmarks = b.bookmarks;
 		self.session = b.session;
 		self.loggedIn = b.loggedIn;
 		self.requiresLogin = b.requiresLogin;
@@ -217,6 +220,17 @@ function BBS(url, $http, $rootScope, $location) {
 		}
 	});
 
+	$rootScope.$on("#list", function(nm, evt) {
+		if (evt.server == self && evt.data.type == "bookmark") {
+			console.log("BOOKAMEKS");
+			console.log(evt.data);
+			if (evt.data.bookmarks && evt.data.bookmarks.length > 0) {
+				self.bookmarks = evt.data.bookmarks;
+			}
+			localStorage["current"] = self.serialize();
+		}
+	});
+
 	$rootScope.$on("#welcome", function(nm, evt) {
 		if (evt.server == self) {
 			self.loggedIn = true;
@@ -226,6 +240,8 @@ function BBS(url, $http, $rootScope, $location) {
 			if (self == $rootScope.currentServer) {
 				localStorage["current"] = self.serialize();
 			}
+
+			self.list("bookmark");
 		}
 	});
 }
