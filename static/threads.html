@@ -9,12 +9,15 @@
 <div class="errorBox" ng-show="error">
 	{{error}}
 </div>
+<div style="text-align: right; margin-top: 0.5em;">
+	<a href="#/post"><button>&#x270e; New Thread</button></a>
+</div>
 <ul>
 	<li ng-repeat="thread in threads">
 		<a ng-href="#/get/{{thread.id}}" class="fullBoxLink">
 			<div class="clickyBox" ng-click="view(thread)">
 				<div>
-					<span><b>{{thread.title}}</b></span>
+					<span>{{thread.title}}</span>
 				</div>
 				<div ng-show="thread.tags" style="text-align: right;">
 					<ul class="inlineList">

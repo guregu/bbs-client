@@ -1,0 +1,23 @@
+<div class="topBar menuBar">
+	<span ng-show="!currentServer.can('login')">
+		no login
+	</span>
+	<span ng-show="currentServer.can('login') && !currentServer.loggedIn">
+		not logged in
+	</span>
+	<span ng-show="currentServer.loggedIn">
+		logged in as {{currentServer.username}}
+	</span>
+</div>
+<ul>
+	<li ng-show="currentServer.loggedIn">
+		<div class="clickyBox" ng-click="logout()">
+			&times; Log out
+		</div>
+	</li>
+	<li>
+		<div class="clickyBox" ng-click="disconnect()">
+			&times; Disconnect
+		</div>
+	</li>
+</ul>

@@ -7,6 +7,7 @@
 
 
 		<script src="/static/vendor/moment.min.js"></script>
+		<script src="/static/vendor/marked.js"></script>
 		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.1.5/angular.js"></script>
 		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.1.5/angular-sanitize.js"></script>
 
@@ -18,18 +19,31 @@
 		<div class="topBar">
 			<span class="topBarHeader">
 				<span ng-show="!currentServer">
-					<b>bbs client</b>
+					<a href="#/servers" style="text-decoration: none;">bbs client</a>
 				</span>
 				<span ng-show="currentServer">
-					{{currentServer.name}}
+					<a href="#/home" style="text-decoration: none;">{{currentServer.name}}</a>
 				</span>
 			</span>
 			<span class="topBarItem" ng-show="currentServer">
 				<a href="#/threads">threads</a>
 			</span>
 
-			<span class="topBarItem pull-right">
-				<a href="#/servers">servers</a>
+			<span class="pull-right">
+				<span ng-show="currentServer && currentServer.can('login')">
+					<span class="topBarItem" ng-show="currentServer.loggedIn">
+						<a href="#/logout">log out</a>
+					</span>
+					<span class="topBarItem" ng-show="!currentServer.loggedIn && currentServer.can('register')">
+						<a href="#/register">register</a>
+					</span>
+					<span class="topBarItem" ng-show="!currentServer.loggedIn">
+						<a href="#/login">log in</a>
+					</span>
+				</span>
+				<span ng-show="!currentServer || !currentServer.can('login')">
+					<a href="#/servers">servers</a>
+				</span>
 			</span>
 		</div>
 		<!-- content -->

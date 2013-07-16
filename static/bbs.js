@@ -9,10 +9,14 @@ bbsApp.config(function($routeProvider) {
 	$routeProvider.
 		when('/servers', {templateUrl: '/static/servers.html', controller: ServersCtrl}).
 		when('/login', {templateUrl: '/static/login.html', controller: LoginCtrl}).
+		when('/logout', {templateUrl: '/static/logout.html', controller: LogoutCtrl}).
+		when('/home', {templateUrl: '/static/home.html', controller: HomeCtrl}).
 		when('/threads', {templateUrl: '/static/threads.html', controller: ThreadsCtrl}).
 		when('/threads/:query', {templateUrl: '/static/threads.html', controller: ThreadsCtrl}).
 		when('/get/:id', {templateUrl: '/static/thread.html', controller: ThreadCtrl}).
 		when('/get/:id/:filter', {templateUrl: '/static/thread.html', controller: ThreadCtrl}).
+		when('/reply/:id', {templateUrl: '/static/reply.html', controller: ReplyCtrl}).
+		when('/post', {templateUrl: '/static/post.html', controller: PostCtrl}).
 		otherwise({redirectTo: '/servers'});
 });
 
@@ -101,6 +105,18 @@ function BBS(url, $http, $rootScope, $location) {
 		return self.options.indexOf(opt) != -1;
 	}
 
+	this.guestsCan = function(cmd) {
+		return self.access.guest.indexOf(cmd) != -1;
+	}
+
+	this.usersCan = function(cmd) {
+		return self.access.user.indexOf(cmd) != -1;
+	}
+
+	this.can = function(cmd) {
+		return (self.guestsCan(cmd) || self.usersCan(cmd));
+	}
+
 	this.hello = function() {
 		self.send({
 			cmd: "hello"
@@ -154,6 +170,29 @@ function BBS(url, $http, $rootScope, $location) {
 			cmd.filter = filter;
 		}
 		console.log(cmd);
+		self.send(cmd);
+	}
+
+	this.reply = function(id, body, format) {
+		var cmd = {
+			cmd: "reply",
+			to: id,
+			body: body,
+			format: format
+		};
+		self.send(cmd);
+	}
+
+	this.post = function(title, body, format, tags) {
+		var cmd = {
+			cmd: "post",
+			title: title,
+			body: body,
+			format: format
+		};
+		if (tags) {
+			cmd.tags = tags;
+		}
 		self.send(cmd);
 	}
 
@@ -230,6 +269,43 @@ bbsApp.filter('ago', function() {
 	}
 })
 
+bbsApp.directive('markdown', function() {
+  marked.setOptions({
+    gfm: true,
+    tables: true,
+    breaks: true,
+    pedantic: false,
+    sanitize: true,
+    smartLists: true,
+    smartypants: false
+  });
+ 	return {
+	    restrict: 'E',
+	    require: '?ngModel',
+
+        link: function(scope, element, attrs, model) {
+        	var render = function() {
+	        	var txt = "";
+	        	if (attrs['ngModel']) {
+	        		if (model.$modelValue) {
+	 					txt = model.$modelValue;
+	        		}
+	        	} else {
+	        		txt = element.text();
+	        	}
+	        	var htmlText = marked(txt);
+	            element.html(htmlText);
+	        }
+
+        	if (attrs['ngModel']) {
+                scope.$watch(attrs['ngModel'], render);
+            }
+
+            render();
+        }
+    }
+});
+
 bbsApp.run(function ($rootScope, Servers) {
 	Servers.add("/4chan");
 	Servers.add("/eti");
@@ -269,6 +345,15 @@ function ServersCtrl($rootScope, $scope, $location, Servers) {
 	$scope.refresh();
 }
 
+function LogoutCtrl($rootScope, $location) {
+	if ($rootScope.currentServer) {
+		$rootScope.currentServer.logout();
+		$rootScope.currentServer = null;
+		delete localStorage["current"];
+	}
+	$location.path("/servers");
+}
+
 function LoginCtrl($rootScope, $scope, $location) {
 	$scope.error = null;
 	$scope.username = "";
@@ -291,6 +376,23 @@ function LoginCtrl($rootScope, $scope, $location) {
 		console.log(evt);
 		$scope.error = evt.data.msg;
 	});
+}
+
+function HomeCtrl($rootScope, $location, $scope) {
+	$scope.logout = function() {
+		$rootScope.currentServer.logout();
+	}
+
+	$scope.disconnect = function() {
+		$rootScope.currentServer.logout();
+		$rootScope.currentServer = null;
+		delete localStorage["current"];
+		$location.path('/servers');
+	}
+
+	if (!$rootScope.currentServer) {
+		$location.path('/servers');
+	}
 }
 
 function ThreadsCtrl($rootScope, $scope, $location, $routeParams) {
@@ -335,7 +437,7 @@ function ThreadsCtrl($rootScope, $scope, $location, $routeParams) {
 	}
 }
 
-function ThreadCtrl($rootScope, $scope, $routeParams) {
+function ThreadCtrl($rootScope, $scope, $routeParams, $location) {
 	$scope.error = null;
 
 	$scope.id = $routeParams.id;
@@ -356,9 +458,14 @@ function ThreadCtrl($rootScope, $scope, $routeParams) {
 		$rootScope.currentServer.get($scope.id, $scope.next, $scope.filter);
 	}
 
+	$scope.reply = function() {
+		// TODO: make modal instead of redirect
+		$location.path("/reply/" + $scope.id);
+	}
+
 	$scope.$on("#msg", function(nm, evt) {
 		if (evt.data.id == $scope.id) {
-			console.log(evt.data);
+			console.log(evt);
 			$scope.title = evt.data.title;
 			$scope.closed = evt.data.closed;
 			$scope.filter = evt.data.filter;
@@ -381,4 +488,47 @@ function ThreadCtrl($rootScope, $scope, $routeParams) {
 	} else {
 		$rootScope.currentServer.get($scope.id, $scope.next, $scope.filter);
 	}
+}
+
+function ReplyCtrl($rootScope, $scope, $routeParams, $location) {
+	$scope.id = $routeParams.id;
+	$scope.error = null;
+	$scope.body = "";
+	$scope.format = "text";
+
+	$scope.submit = function() {
+		console.log("submitting...");
+		$rootScope.currentServer.reply($scope.id, $scope.body, $scope.format);
+	}
+
+	$scope.$on("#ok", function(nm, evt) {
+		if (evt.data.wrt == "reply") {
+			$location.path("/get/" + $scope.id);
+		}
+	});
+
+	$scope.$on("!reply", function(nm, evt) {
+		$scope.error = evt.data.error;
+	});
+}
+
+function PostCtrl($rootScope, $scope, $location) {
+	$scope.error = null;
+	$scope.title = null;
+	$scope.body = "";
+	$scope.format = "text";
+
+	$scope.submit = function() {
+		$rootScope.currentServer.post($scope.title, $scope.body, $scope.format);
+	}
+
+	$scope.$on("#ok", function(nm, evt) {
+		if (evt.data.wrt == "post") {
+			$location.path("/get/" + evt.data.result);
+		}
+	});
+
+	$scope.$on("!post", function(nm, evt) {
+		$scope.error = evt.data.error;
+	});
 }

@@ -16,6 +16,9 @@
 <div class="errorBox" ng-show="error">
 	{{error}}
 </div>
+<div style="text-align: right; margin-top: 0.5em;" ng-click="reply()">
+	<button>&#x270e; Reply</button>
+</div>
 <ul>
 	<li ng-repeat="message in messages">
 		<div class="clickyBox">
@@ -32,12 +35,28 @@
 			</span>
 			<hr ng-show="message.body">
 			<span ng-show="format == 'html'" ng-bind-html-unsafe="message.body"></span>
+			<span ng-show="format == 'markdown'"><markdown ng-model="message.body"></markdown></span>
 			<span ng-show="format == 'text' || !format">{{message.body}}</span>
+		</div>
+	</li>
+	<li ng-show="!messages || messages.length == 0">
+		<div class="clickyBox" ng-click="loadMore()">
+			Loading...
 		</div>
 	</li>
 	<li ng-show="next">
 		<div class="clickyBox" ng-click="loadMore()">
 			Load more...
+		</div>
+	</li>
+	<li ng-show="!closed">
+		<div class="clickyBox" ng-click="reply()">
+			&#x270e; Reply
+		</div>
+	</li>
+	<li ng-show="closed">
+		<div class="clickyBox">
+			Thread is closed, can't reply.
 		</div>
 	</li>
 </ul>

@@ -1,0 +1,12 @@
+<div class="topBar menuBar">
+	<a ng-href="#/get/{{id}}">{{id}}</a> » Reply
+</div>
+<div class="errorBox" ng-show="error">
+	{{error}}
+</div>
+<div class="topBar menuBar">
+	<form ng-submit="submit()">
+		<textarea ng-model="body" style="min-height: 5em; width: 100%"></textarea>
+		<button type="submit" style="width: 100%;">Post</button>
+	</form>
+</div>
