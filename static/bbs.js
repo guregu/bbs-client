@@ -17,6 +17,7 @@ bbsApp.config(function($routeProvider) {
 		when('/get/:id/:filter', {templateUrl: '/static/thread.html', controller: ThreadCtrl}).
 		when('/reply/:id', {templateUrl: '/static/reply.html', controller: ReplyCtrl}).
 		when('/post', {templateUrl: '/static/post.html', controller: PostCtrl}).
+		when('/register', {templateUrl: '/static/register.html', controller: RegisterCtrl}).
 		otherwise({redirectTo: '/servers'});
 });
 
@@ -135,6 +136,14 @@ function BBS(url, $http, $rootScope, $location) {
 		});
 	}
 
+	this.register = function(u, p) {
+		self.send({
+			cmd: "register",
+			username: u,
+			password: p
+			});
+	}
+
 	this.logout = function() {
 		if (self.loggedIn) {
 			self.send({
@@ -247,9 +256,9 @@ function BBS(url, $http, $rootScope, $location) {
 }
 
 bbsApp.factory('Servers', function($rootScope, $http, $location) {
-	var defaultServer = new BBS("/bbs", $http, $rootScope, $location);
+//	var defaultServer = new BBS("/bbs", $http, $rootScope, $location);
 	var servers = {};
-	servers[defaultServer.url] = defaultServer;
+//	servers[defaultServer.url] = defaultServer;
 
 	var Servers = {
 		add: function(url) {
@@ -323,8 +332,7 @@ bbsApp.directive('markdown', function() {
 });
 
 bbsApp.run(function ($rootScope, Servers) {
-	Servers.add("/4chan");
-	Servers.add("/eti");
+	Servers.add("http://tiko.jp:8888/bbs");
 	if (localStorage["current"]) {
 		var data = angular.fromJson(localStorage["current"]);
 		var srv = Servers.get(data.url);
@@ -548,3 +556,26 @@ function PostCtrl($rootScope, $scope, $location) {
 		$scope.error = evt.data.error;
 	});
 }
+
+function RegisterCtrl($rootScope, $scope, $location) {
+        $scope.error = null;
+        $scope.username = "";
+        $scope.password = "";
+
+        $scope.submit = function() {
+                $rootScope.currentServer.register($scope.username, $scope.password);
+        }
+
+        $scope.$on("#ok", function(nm, evt) {
+		console.log(evt);
+		if (evt.data.wrt == "register") {
+	                $rootScope.currentServer.login($scope.username, $scope.password);
+			$location.path($rootScope.currentServer.home())
+                }
+        });
+
+        $scope.$on("!register", function(nm, evt) {
+                console.log(evt);
+                $scope.error = evt.data.msg;
+        });
+}	

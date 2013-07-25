@@ -39,7 +39,7 @@ button:hover {
 }
 
 div.topBar {
-	color: black;
+	color: white;
 	padding: 0.5em;
 	background-color: #4b73aa;
 }
@@ -98,11 +98,12 @@ div.clickyBox {
 }
 
 div.clickyBox a {
-	color: white;
+	color: black;
+	text-decoration: underline;
 }
 
 div.clickyBox a:visited {
-	color: white;
+	color: black;
 }
 
 div.clickyBox hr {

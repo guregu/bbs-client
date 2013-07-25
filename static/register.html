@@ -1,0 +1,14 @@
+<div class="errorBox" ng-show="error">
+	{{error}}
+</div>
+<div class="topBar menuBar">
+	<form ng-submit="submit()">
+		<label for="name">Username:</label>
+		<input type="text" id="name" ng-model="username" />
+		<br />
+		<label for="pass">Password:</label>
+		<input type="password" id="pass" ng-model="password" />
+		<br />
+		<button  style="width: 100%;">Register</button>
+	</form>
+</div>
