@@ -332,7 +332,7 @@ bbsApp.directive('markdown', function() {
 });
 
 bbsApp.run(function ($rootScope, Servers) {
-	Servers.add("http://tiko.jp:8888/bbs");
+	Servers.add("/bbs");
 	if (localStorage["current"]) {
 		var data = angular.fromJson(localStorage["current"]);
 		var srv = Servers.get(data.url);
