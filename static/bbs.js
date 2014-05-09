@@ -21,248 +21,309 @@ bbsApp.config(function($routeProvider) {
 		otherwise({redirectTo: '/servers'});
 });
 
-function BBS(url, $http, $rootScope, $location) {
-	this.url = url;
-	this.name = url;
-	this.desc = "Pinging...";
-	this.access = {};
-	this.lists = [];
-	this.options = [];
-	this.formats = [];
-	this.bookmarks = [];
+bbsApp.factory('BBS', function($http, $rootScope, $location) {
+	return function(url) {
+		this.url = url;
+		this.name = url;
+		this.desc = "Pinging...";
+		this.access = {};
+		this.lists = [];
+		this.options = [];
+		this.formats = [];
+		this.bookmarks = [];
 
-	this.loggedIn = false;
-	this.username = null;
-	this.session = null;
-	this.requiresLogin = false;
+		this.wsURL = null;
+		this.realtime = false;
+		this.socket = null;
+		this.sendQueue = [];
 
-	var self = this;
+		this.loggedIn = false;
+		this.username = null;
+		this.session = null;
+		this.requiresLogin = false;
 
-	this.send = function(cmd) {
-		if (self.session) {
-			cmd.session = self.session;
+		var self = this;
+
+		this.connect = function() {
+			self.realtime = true;
+			self.socket = new WebSocket(self.wsURL);
+			self.socket.onopen = function() {
+				console.log("Realtime: connected.");
+
+				angular.forEach(self.sendQueue, function(msg) {
+				    self.send(msg);
+				});
+				self.sendQueue = [];
+			};
+			self.socket.onclose = function() {
+				console.log("Realtime: disconnected.");
+			};
+			self.socket.onerror = function (error) {
+			    console.log(error);
+			};
+			self.socket.onmessage = function(evt) {
+				var data = angular.fromJson(evt.data);
+				self.receive(data, true);
+			};
 		}
-		$http.post(self.url, cmd).success(function(recv) {
-			$rootScope.$broadcast("#" + recv.cmd, {
-				server: self,
-				data: recv
-			});
-		}).error(function(recv) {
-			console.log("error: " + recv.wrt);
-			$rootScope.$broadcast("!" + recv.wrt, {
-				server: self,
-				data: recv
-			});
-			console.log(recv);
-		});
-	}
 
-	// update this bbs with data from "hello" cmd
-	this.refresh = function(data) {
-		self.name = data.name;
-		self.desc = data.desc;
-		self.access = data.access;
-		self.lists = data.lists || [];
-		self.options = data.options;
-		self.formats = data.format || ["text"];
-		self.defaultFormat = self.formats[0];
-
-		if (self.access.user && self.access.user["get"] || self.access.user["list"]) {
-			self.requiresLogin = true;
-		}
-	} 
-
-	this.serialize = function() {
-		return angular.toJson({
-			url: self.url,
-			name: self.name,
-			desc: self.desc,
-			access: self.access,
-			lists: self.lists,
-			options: self.options,
-			bookmarks: self.bookmarks,
-			formats: self.formats,
-			session: self.session,
-			loggedIn: self.loggedIn,
-			requiresLogin: self.requiresLogin,
-			username: self.username
-		});
-	}
-
-	this.deserialze = function(b) {
-		self.url = b.url;
-		self.name = b.name;
-		self.desc = b.desc;
-		self.access = b.access;
-		self.lists = b.lists;
-		self.options = b.options;
-		self.formats = b.formats;
-		self.defaultFormat = b.formats[0];
-		self.bookmarks = b.bookmarks;
-		self.session = b.session;
-		self.loggedIn = b.loggedIn;
-		self.requiresLogin = b.requiresLogin;
-		self.username = b.username;
-	}
-
-	this.supports = function(opt) {
-		return self.options.indexOf(opt) != -1;
-	}
-
-	this.guestsCan = function(cmd) {
-		return self.access.guest.indexOf(cmd) != -1;
-	}
-
-	this.usersCan = function(cmd) {
-		return self.access.user.indexOf(cmd) != -1;
-	}
-
-	this.can = function(cmd) {
-		return (self.guestsCan(cmd) || self.usersCan(cmd));
-	}
-
-	this.hello = function() {
-		self.send({
-			cmd: "hello"
-		});
-	}
-
-	this.login = function(username, password) {
-		self.send({
-			cmd: "login",
-			username: username,
-			password: password,
-			version: 0
-		});
-	}
-
-	this.register = function(u, p) {
-		self.send({
-			cmd: "register",
-			username: u,
-			password: p
-			});
-	}
-
-	this.logout = function() {
-		if (self.loggedIn) {
-			self.send({
-				cmd: "logout"
-			});
-		}	
-		self.loggedIn = false;
-		self.session = false;
-		self.username = null;
-	}
-
-	this.list = function(type, query, token) {
-		var cmd = {
-			cmd: "list",
-			type: type,
-		};
-		if (query) {
-			cmd.query = query;
-		}
-		if (token) {
-			cmd.token = token;
-		}
-		self.send(cmd);
-	}
-
-	this.get = function(id, token, filter, format) {
-		var cmd = {
-			cmd: "get",
-			id: id,
-			format: format || self.defaultFormat
-		}
-		if (token) {
-			cmd.token = token;
-		}
-		if (filter) {
-			cmd.filter = filter;
-		}
-		console.log(cmd);
-		self.send(cmd);
-	}
-
-	this.reply = function(id, body, format) {
-		var cmd = {
-			cmd: "reply",
-			to: id,
-			body: body,
-			format: format
-		};
-		self.send(cmd);
-	}
-
-	this.post = function(title, body, format, tags) {
-		var cmd = {
-			cmd: "post",
-			title: title,
-			body: body,
-			format: format
-		};
-		if (tags) {
-			cmd.tags = tags;
-		}
-		self.send(cmd);
-	}
-
-	this.home = function() {
-		if (self.requiresLogin && !self.loggedIn) {
-			return "/login";
-		}
-		if (self.lists.indexOf("board") != -1) {
-			return "/boards";
-		}
-		return "/threads";
-	}
-
-	// our log-in is bad
-	$rootScope.$on("!session", function(nm, evt) {
-		console.log(self);
-		if (evt.server == self) {
-			self.loggedIn = false;
-			self.session = null;
-			$rootScope.loginRedirect = $location.path();
-			$location.path("/login");
-		}
-	});
-
-	$rootScope.$on("#list", function(nm, evt) {
-		if (evt.server == self && evt.data.type == "bookmark") {
-			console.log("BOOKAMEKS");
-			console.log(evt.data);
-			if (evt.data.bookmarks && evt.data.bookmarks.length > 0) {
-				self.bookmarks = evt.data.bookmarks;
+		this.send = function(cmd) {
+			// websocket sends
+			if (self.realtime) {
+				if (self.socket && self.socket.readyState == 1) {
+					self.socket.send(angular.toJson(cmd));
+				} else {
+					self.sendQueue.push(cmd);
+				}
+				return;
 			}
-			localStorage["current"] = self.serialize();
+
+			// http sends
+			if (self.session) {
+				cmd.session = self.session;
+			}
+			$http.post(self.url, cmd).success(function(recv) {
+				self.receive(recv);
+			});
 		}
-	});
 
-	$rootScope.$on("#welcome", function(nm, evt) {
-		if (evt.server == self) {
-			self.loggedIn = true;
-			self.session = evt.data.session;
-			self.username = evt.data.username;
+		this.receive = function(data, apply) {
+			if (data.cmd != "error") {
+				$rootScope.$broadcast("#" + data.cmd, {
+					server: self,
+					data: data
+				});
+			} else {
+				console.log("error: " + data.wrt);
+				$rootScope.$broadcast("!" + data.wrt, {
+					server: self,
+					data: data
+				});
+			}
+			if (apply) {
+				$rootScope.$apply();
+			}
+		}
 
-			if (self == $rootScope.currentServer) {
+		// update this bbs with data from "hello" cmd
+		this.refresh = function(data) {
+			console.log(data);
+			self.name = data.name;
+			self.desc = data.desc;
+			self.access = data.access;
+			self.lists = data.lists || [];
+			self.options = data.options;
+			self.formats = data.format || ["text"];
+			self.defaultFormat = self.formats[0];
+			self.wsURL = data.realtime;
+
+			if (self.access.user && self.access.user["get"] || self.access.user["list"]) {
+				self.requiresLogin = true;
+			}
+
+			if (self.wsURL) {
+				self.connect();
+			}
+		} 
+
+		this.serialize = function() {
+			return angular.toJson({
+				url: self.url,
+				name: self.name,
+				desc: self.desc,
+				access: self.access,
+				lists: self.lists,
+				options: self.options,
+				bookmarks: self.bookmarks,
+				formats: self.formats,
+				session: self.session,
+				loggedIn: self.loggedIn,
+				requiresLogin: self.requiresLogin,
+				username: self.username,
+				wsURL: self.wsURL
+			});
+		}
+
+		this.deserialze = function(b) {
+			self.url = b.url;
+			self.name = b.name;
+			self.desc = b.desc;
+			self.access = b.access;
+			self.lists = b.lists;
+			self.options = b.options;
+			self.formats = b.formats;
+			self.defaultFormat = b.formats[0];
+			self.bookmarks = b.bookmarks;
+			self.session = b.session;
+			self.loggedIn = b.loggedIn;
+			self.requiresLogin = b.requiresLogin;
+			self.username = b.username;
+			self.wsURL = b.wsURL;
+
+			if (self.wsURL) {
+				self.connect();
+			}
+		}
+
+		this.supports = function(opt) {
+			return self.options.indexOf(opt) != -1;
+		}
+
+		this.guestsCan = function(cmd) {
+			return self.access.guest.indexOf(cmd) != -1;
+		}
+
+		this.usersCan = function(cmd) {
+			return self.access.user.indexOf(cmd) != -1;
+		}
+
+		this.can = function(cmd) {
+			return (self.guestsCan(cmd) || self.usersCan(cmd));
+		}
+
+		this.hello = function() {
+			self.send({
+				cmd: "hello"
+			});
+		}
+
+		this.login = function(username, password) {
+			self.send({
+				cmd: "login",
+				username: username,
+				password: password,
+				version: 0
+			});
+		}
+
+		this.register = function(u, p) {
+			self.send({
+				cmd: "register",
+				username: u,
+				password: p
+				});
+		}
+
+		this.logout = function() {
+			if (self.loggedIn) {
+				self.send({
+					cmd: "logout"
+				});
+			}	
+			self.loggedIn = false;
+			self.session = false;
+			self.username = null;
+		}
+
+		this.list = function(type, query, token) {
+			var cmd = {
+				cmd: "list",
+				type: type,
+			};
+			if (query) {
+				cmd.query = query;
+			}
+			if (token) {
+				cmd.token = token;
+			}
+			self.send(cmd);
+		}
+
+		this.get = function(id, token, filter, format) {
+			var cmd = {
+				cmd: "get",
+				id: id,
+				format: format || self.defaultFormat
+			}
+			if (token) {
+				cmd.token = token;
+			}
+			if (filter) {
+				cmd.filter = filter;
+			}
+			console.log(cmd);
+			self.send(cmd);
+		}
+
+		this.reply = function(id, body, format) {
+			var cmd = {
+				cmd: "reply",
+				to: id,
+				body: body,
+				format: format
+			};
+			self.send(cmd);
+		}
+
+		this.post = function(title, body, format, tags) {
+			var cmd = {
+				cmd: "post",
+				title: title,
+				body: body,
+				format: format
+			};
+			if (tags) {
+				cmd.tags = tags;
+			}
+			self.send(cmd);
+		}
+
+		this.home = function() {
+			if (self.requiresLogin && !self.loggedIn) {
+				return "/login";
+			}
+			if (self.lists.indexOf("board") != -1) {
+				return "/boards";
+			}
+			return "/threads";
+		}
+
+		// our log-in is bad
+		$rootScope.$on("!session", function(nm, evt) {
+			console.log(self);
+			if (evt.server == self) {
+				self.loggedIn = false;
+				self.session = null;
+				$rootScope.loginRedirect = $location.path();
+				$location.path("/login");
+			}
+		});
+
+		$rootScope.$on("#list", function(nm, evt) {
+			if (evt.server == self && evt.data.type == "bookmark") {
+				console.log("BOOKAMEKS");
+				console.log(evt.data);
+				if (evt.data.bookmarks && evt.data.bookmarks.length > 0) {
+					self.bookmarks = evt.data.bookmarks;
+				}
 				localStorage["current"] = self.serialize();
 			}
+		});
 
-			self.list("bookmark");
-		}
-	});
-}
+		$rootScope.$on("#welcome", function(nm, evt) {
+			if (evt.server == self) {
+				self.loggedIn = true;
+				self.session = evt.data.session;
+				self.username = evt.data.username;
 
-bbsApp.factory('Servers', function($rootScope, $http, $location) {
+				if (self == $rootScope.currentServer) {
+					localStorage["current"] = self.serialize();
+				}
+
+				self.list("bookmark");
+			}
+		});
+	}
+});
+
+bbsApp.factory('Servers', function($rootScope, BBS) {
 //	var defaultServer = new BBS("/bbs", $http, $rootScope, $location);
 	var servers = {};
 //	servers[defaultServer.url] = defaultServer;
 
 	var Servers = {
 		add: function(url) {
-			servers[url] = new BBS(url, $http, $rootScope, $location);
+			servers[url] = new BBS(url);
 		},
 		list: function() {
 			var list = [];
@@ -569,9 +630,9 @@ function RegisterCtrl($rootScope, $scope, $location) {
         $scope.$on("#ok", function(nm, evt) {
 		console.log(evt);
 		if (evt.data.wrt == "register") {
-	                $rootScope.currentServer.login($scope.username, $scope.password);
-			$location.path($rootScope.currentServer.home())
-                }
+	        	$rootScope.currentServer.login($scope.username, $scope.password);
+				$location.path($rootScope.currentServer.home())
+          	}
         });
 
         $scope.$on("!register", function(nm, evt) {
