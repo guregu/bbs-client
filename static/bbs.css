@@ -95,6 +95,7 @@ div.clickyBox {
 	padding: 0.5em;
 	cursor: pointer;
 	margin-bottom: 0.2em;
+	overflow-x: auto;
 }
 
 div.clickyBox a {

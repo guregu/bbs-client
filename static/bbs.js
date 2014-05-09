@@ -46,10 +46,12 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 
 		this.connect = function() {
 			self.realtime = true;
-			self.socket = new WebSocket(self.wsURL);
+			self.socket = new ReconnectingWebSocket(self.wsURL);
 			self.socket.onopen = function() {
 				console.log("Realtime: connected.");
-
+				if (self.session != null) {
+					self.relogin(self.session);
+				}
 				angular.forEach(self.sendQueue, function(msg) {
 				    self.send(msg);
 				});
@@ -192,6 +194,14 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 				cmd: "login",
 				username: username,
 				password: password,
+				version: 0
+			});
+		}
+
+		this.relogin = function(session) {
+			self.send({
+				cmd: "login",
+				session: session,
 				version: 0
 			});
 		}
