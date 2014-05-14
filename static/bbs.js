@@ -44,6 +44,10 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 
 		var self = this;
 
+		this.startWS = function() {
+			//self.connect();
+		}
+
 		this.connect = function() {
 			self.realtime = true;
 			self.socket = new ReconnectingWebSocket(self.wsURL);
@@ -61,7 +65,7 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 				console.log("Realtime: disconnected.");
 			};
 			self.socket.onerror = function (error) {
-			    console.log(error);
+
 			};
 			self.socket.onmessage = function(evt) {
 				var data = angular.fromJson(evt.data);
@@ -73,6 +77,7 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 			// websocket sends
 			if (self.realtime) {
 				if (self.socket && self.socket.readyState == 1) {
+					console.dir(cmd);
 					self.socket.send(angular.toJson(cmd));
 				} else {
 					self.sendQueue.push(cmd);
@@ -90,6 +95,7 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 		}
 
 		this.receive = function(data, apply) {
+			console.log(data);
 			if (data.cmd != "error") {
 				$rootScope.$broadcast("#" + data.cmd, {
 					server: self,
@@ -109,7 +115,6 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 
 		// update this bbs with data from "hello" cmd
 		this.refresh = function(data) {
-			console.log(data);
 			self.name = data.name;
 			self.desc = data.desc;
 			self.access = data.access;
@@ -119,12 +124,12 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 			self.defaultFormat = self.formats[0];
 			self.wsURL = data.realtime;
 
-			if (self.access.user && self.access.user["get"] || self.access.user["list"]) {
+			if (self.access.user && (self.access.user["get"] || self.access.user["list"])) {
 				self.requiresLogin = true;
 			}
 
 			if (self.wsURL) {
-				self.connect();
+				self.startWS();
 			}
 		} 
 
@@ -163,7 +168,7 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 			self.wsURL = b.wsURL;
 
 			if (self.wsURL) {
-				self.connect();
+				self.startWS();
 			}
 		}
 
@@ -172,11 +177,11 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 		}
 
 		this.guestsCan = function(cmd) {
-			return self.access.guest.indexOf(cmd) != -1;
+			return self.access.guest && self.access.guest.indexOf(cmd) != -1;
 		}
 
 		this.usersCan = function(cmd) {
-			return self.access.user.indexOf(cmd) != -1;
+			return self.access.user && self.access.user.indexOf(cmd) != -1;
 		}
 
 		this.can = function(cmd) {
@@ -255,6 +260,20 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 			self.send(cmd);
 		}
 
+		this.getRange = function(id, range, filter, format) {
+			var cmd = {
+				cmd: "get",
+				id: id,
+				range: range,
+				format: format || self.defaultFormat
+			}
+			if (filter) {
+				cmd.filter = filter;
+			}
+			console.log(cmd);
+			self.send(cmd);
+		}
+
 		this.reply = function(id, body, format) {
 			var cmd = {
 				cmd: "reply",
@@ -290,7 +309,6 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 
 		// our log-in is bad
 		$rootScope.$on("!session", function(nm, evt) {
-			console.log(self);
 			if (evt.server == self) {
 				self.loggedIn = false;
 				self.session = null;
@@ -301,7 +319,6 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 
 		$rootScope.$on("#list", function(nm, evt) {
 			if (evt.server == self && evt.data.type == "bookmark") {
-				console.log("BOOKAMEKS");
 				console.log(evt.data);
 				if (evt.data.bookmarks && evt.data.bookmarks.length > 0) {
 					self.bookmarks = evt.data.bookmarks;
@@ -333,7 +350,9 @@ bbsApp.factory('Servers', function($rootScope, BBS) {
 
 	var Servers = {
 		add: function(url) {
-			servers[url] = new BBS(url);
+			if (!servers[url]) {
+				servers[url] = new BBS(url);
+			}
 		},
 		list: function() {
 			var list = [];
@@ -403,16 +422,16 @@ bbsApp.directive('markdown', function() {
 });
 
 bbsApp.run(function ($rootScope, Servers) {
-	Servers.add("/bbs");
 	if (localStorage["current"]) {
 		var data = angular.fromJson(localStorage["current"]);
+		Servers.add(data.url);
 		var srv = Servers.get(data.url);
 		srv.deserialze(data);
 		$rootScope.currentServer = srv;
 	}
 });
 
-function ServersCtrl($rootScope, $scope, $location, Servers) {
+function ServersCtrl($rootScope, $scope, $location, $http, Servers) {
 	$scope.servers = Servers.list();
 	
 	$scope.refresh = function() {
@@ -437,6 +456,18 @@ function ServersCtrl($rootScope, $scope, $location, Servers) {
 		}
 	});
 
+	$http({method: 'GET', url: '/index.json', cache: true}).
+	    success(function(data, status, headers, config) {
+	      angular.forEach(data, function(server) {
+	      	console.log('adding ' + server.path);
+	      	Servers.add(server.path);
+	      });
+	      $scope.refresh();
+	    }).
+	    error(function(data, status, headers, config) {
+	      $scope.error = data;
+	    });
+
 	$scope.refresh();
 }
 
@@ -453,9 +484,13 @@ function LoginCtrl($rootScope, $scope, $location) {
 	$scope.error = null;
 	$scope.username = "";
 	$scope.password = "";
+	$scope.loading = false;
 
 	$scope.login = function() {
-		$rootScope.currentServer.login($scope.username, $scope.password);
+		if (!$scope.loading) {
+			$rootScope.currentServer.login($scope.username, $scope.password);
+			$scope.loading = true;
+		}
 	}
 
 	$scope.$on("#welcome", function(nm, evt) {
@@ -470,6 +505,7 @@ function LoginCtrl($rootScope, $scope, $location) {
 	$scope.$on("!login", function(nm, evt) {
 		console.log(evt);
 		$scope.error = evt.data.msg;
+		$scope.loading = false;
 	});
 }
 
@@ -515,10 +551,20 @@ function ThreadsCtrl($rootScope, $scope, $location, $routeParams) {
 		console.log(evt);
 		if (evt.data.threads) {
 			$scope.threads = $scope.threads.concat(evt.data.threads);
+			remember(evt.data.threads);
 			$scope.next = evt.data.next || null;
 			//console.log(evt);
 		}
 	});
+
+	function remember(threads) {
+		angular.forEach(threads, function(thread) {
+			sessionStorage["ct:" + thread.id] = angular.toJson({
+				posts: thread.posts,
+				unread: thread.unread_posts || 0
+			});
+		});
+	}
 
 	$scope.$on("!list", function(nm, evt) {
 		console.log(evt);
@@ -543,14 +589,44 @@ function ThreadCtrl($rootScope, $scope, $routeParams, $location) {
 	$scope.format = null;
 	$scope.messages = [];
 	$scope.next = null;
+	$scope.range = { start: 0, end: 0 }
+
+	var fetchAll = false;
 
 	$scope.pushMessages = function(msgs) {
 		// TODO: don't blindly concat, instead keep an index of msgids
 		$scope.messages = $scope.messages.concat(msgs);
 	}
 
+	$scope.hasUnread = function() {
+		var data = sessionStorage["ct:" + $scope.id];
+		if (!data) {
+			return false;
+		}
+		var ct = angular.fromJson(data);
+		return (ct.unread > 0) && ($scope.range.end < (ct.posts + ct.unread));
+	}
+
+	$scope.loadUnread = function() {
+		var data = sessionStorage["ct:" + $scope.id];
+		if (!data) {
+			return;
+		}
+		var ct = angular.fromJson(data);
+		var start = (ct.posts - ct.unread) + 1
+		var grab = 50;
+		$rootScope.currentServer.getRange($scope.id, {start: start, end: start + grab - 1});
+		ct.unread = Math.max(ct.unread - grab, 0);
+		sessionStorage["ct:" + $scope.id] = angular.toJson(ct);
+	}
+
 	$scope.loadMore = function() {
 		$rootScope.currentServer.get($scope.id, $scope.next, $scope.filter);
+	}
+
+	$scope.loadAll = function() {
+		fetchAll = true;
+		$scope.loadMore();
 	}
 
 	$scope.reply = function() {
@@ -561,14 +637,29 @@ function ThreadCtrl($rootScope, $scope, $routeParams, $location) {
 	$scope.$on("#msg", function(nm, evt) {
 		if (evt.data.id == $scope.id) {
 			console.log(evt);
+			var oldNext = $scope.next;
 			$scope.title = evt.data.title;
 			$scope.closed = evt.data.closed;
 			$scope.filter = evt.data.filter;
 			$scope.tags = evt.data.tags || null;
 			$scope.format = evt.data.format;
 			$scope.next = evt.data.next || null;
+			$scope.range = evt.data.range;
+			$scope.more = !!evt.data.more;
 
-			$scope.pushMessages(evt.data.messages);
+			if (evt.data.messages) {
+				$scope.pushMessages(evt.data.messages);
+			}
+
+			if (fetchAll) {
+				if ($scope.more && $scope.next && (oldNext !== $scope.next)) {
+					console.log('gettin more! ' + $scope.next);
+					$scope.loadMore();
+				} else {
+					// we're out of nexts, untoggle
+					fetchAll = false;
+				}
+			}
 		}
 	});
 
@@ -618,12 +709,14 @@ function PostCtrl($rootScope, $scope, $location) {
 	}
 
 	$scope.$on("#ok", function(nm, evt) {
+		console.log(evt);
 		if (evt.data.wrt == "post") {
 			$location.path("/get/" + evt.data.result);
 		}
 	});
 
 	$scope.$on("!post", function(nm, evt) {
+		console.log(evt);
 		$scope.error = evt.data.error;
 	});
 }

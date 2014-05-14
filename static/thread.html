@@ -46,8 +46,16 @@
 		</div>
 	</li>
 	<li ng-show="next">
-		<div class="clickyBox" ng-click="loadMore()">
-			Load more...
+		<div class="prevNext">
+			<div class="clickyBox littleButton" ng-click="loadMore()">
+				→ More
+			</div>
+			<div class="clickyBox littleButton" ng-if="hasUnread()" ng-click="loadUnread()">
+				⇢ Unread
+			</div>
+			<div class="clickyBox littleButton" ng-click="loadAll()">
+				⇉ All
+			</div>
 		</div>
 	</li>
 	<li ng-show="!closed">

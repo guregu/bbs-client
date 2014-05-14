@@ -65,7 +65,7 @@ span.topBarItem {
 } 
 
 div.errorBox {
-	background-color: red;
+	background-color: rgba(255, 102, 102, 0.8);
 	color: black;
 	padding: 0.5em;
 	margin-top: 0.5em;
@@ -115,6 +115,11 @@ div.clickyBox hr {
 	height: 1px;
 }
 
+div.littleButton {
+	width: 6em;
+	text-align: center;
+}
+
 ul.inlineList {
 	display: inline;
 }
@@ -134,6 +139,35 @@ ul.inlineList li:last-child:after {
 .danger {
 	color: red !important;
 }
+
+body {
+    margin: 8px;
+}
+
+.prevNext {
+    text-align: justify;
+    border: 1px solid #ccc;
+}
+
+.prevNext div {
+    display: inline-block;
+    position: relative;
+    top: 1.2em;
+}
+
+.prevNext:before{
+    content: '';
+    display: block;
+    width: 100%;
+    margin-bottom: -1.2em;
+}
+
+.prevNext:after {
+    content: '';
+    display: inline-block;
+    width: 100%;
+}
+
 
 /* ETI compat */
 .quoted-message{border-left:2px solid #144fae;color:#144fae;padding-left:8px}

@@ -9,6 +9,6 @@
 		<label for="pass">Password:</label>
 		<input type="password" id="pass" ng-model="password" />
 		<br />
-		<button ng-click="login()" style="width: 100%;">Log in</button>
+		<button ng-click="login()" style="width: 100%;" ng-disabled="loading">Log in</button>
 	</form>
 </div>

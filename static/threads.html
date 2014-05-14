@@ -24,17 +24,19 @@
 						<li ng-repeat="tag in thread.tags">
 							<a ng-href="#/threads/{{tag}}" ng-class="{'danger': dangerous(tag)}">{{tag}}</a>
 						</li>
-					</ul>				</div>
+					</ul>				
+				</div>
 				<div style="text-align: right;" ng-show="thread.user">
 					{{thread.user}}
 				</div>
 				<div style="text-align: right;">
-					<span ng-show="thread.posts">
+					<span ng-if="thread.posts">
 						<ng-pluralize count="{{thread.posts}}"
 						when="{'1': '1 post',
 							   'other': '{{thread.posts}} posts'}">
 					</span>
-					<span ng-show="thread.posts"> ・ </span> 
+					<span ng-if="thread.unread_posts">({{thread.unread_posts}} new)</span>
+					<span ng-if="thread.posts"> ・ </span> 
 					<span>{{thread.date | ago}}</span>
 				</div>
 			</div>
