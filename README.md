@@ -7,3 +7,5 @@ It expects index.html to be served at `/`, and static at `/static/`. It also exp
 [{"path":"/eti"},{"path":"/4chan"}]
 ```
 Where each `"path"` is a BBS endpoint. Some servers can take care of this for you. 
+
+**License**: BSD
