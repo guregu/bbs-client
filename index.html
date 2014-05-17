@@ -22,7 +22,7 @@
 				<span ng-show="!currentServer">
 					<a href="#/servers" style="text-decoration: none;">bbs client</a>
 				</span>
-				<span ng-show="currentServer">
+				<span ng-if="currentServer">
 					<a href="#/home" style="text-decoration: none;">{{currentServer.name}}</a>
 				</span>
 			</span>
@@ -31,7 +31,7 @@
 			</span>
 
 			<span class="pull-right">
-				<span ng-show="currentServer && currentServer.can('login')">
+				<span ng-if="currentServer && currentServer.can('login')">
 					<span class="topBarItem" ng-show="currentServer.loggedIn">
 						<a href="#/logout">log out</a>
 					</span>
@@ -47,7 +47,7 @@
 				</span>
 			</span>
 		</div>
-		<div class="topBar menuBar" ng-show="currentServer && currentServer.bookmarks.length > 0">
+		<div class="topBar menuBar" ng-if="currentServer && currentServer.bookmarks.length > 0">
 			<ul class="inlineList">
 			<li ng-repeat="bookmark in currentServer.bookmarks">
 				<a ng-href="#/threads/{{bookmark.query}}">{{bookmark.name}}</a>
