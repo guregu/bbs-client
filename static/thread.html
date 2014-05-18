@@ -17,21 +17,21 @@
 		</div>
 </div>
 <ul>
+	<!--
 	<li ng-show="next">
 		<div class="prevNext">
 			<div class="clickyBox littleButton" ng-click="_bottom()">
 				↓ Bottom
 			</div>
-			<!--
 			<div class="clickyBox littleButton" ng-click="reply()">
 				新 Newest
 			</div>
-			-->
 			<div class="clickyBox littleButton" ng-click="reply()">
 				&#x270e; Reply
 			</div>
 		</div>
 	</li>
+	-->
 	<li ng-repeat="message in messages">
 		<div class="messageTop" ng-init="canFilter=currentServer.supports('filter')">
 			<span ng-show="canFilter">
