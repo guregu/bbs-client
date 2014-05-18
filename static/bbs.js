@@ -663,10 +663,8 @@ function ThreadCtrl($rootScope, $scope, $routeParams, $location) {
 		}
 	});
 
-	$scope.$on("!msg", function(nm, evt) {
-		if (evt.data.id == $scope.id) {
-			$scope.error = evt.data.error;
-		}
+	$scope.$on("!get", function(nm, evt) {
+		$scope.error = evt.data.error;
 	});
 
 	if (!$rootScope.currentServer) {
