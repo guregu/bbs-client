@@ -3,6 +3,10 @@ var bbsApp = angular.module('bbs', []);
 bbsApp.run(function($rootScope) {
 	$rootScope.currentServer = null;
 	$rootScope.loginRedirect = null;
+
+	$rootScope._bottom = function() {
+		window.scrollTo(0,document.body.scrollHeight);
+	}
 });
 
 bbsApp.config(function($routeProvider) {
@@ -590,6 +594,7 @@ function ThreadCtrl($rootScope, $scope, $routeParams, $location) {
 	$scope.messages = [];
 	$scope.next = null;
 	$scope.range = { start: 0, end: 0 }
+	$scope.total = null;
 
 	var fetchAll = false;
 
@@ -646,6 +651,7 @@ function ThreadCtrl($rootScope, $scope, $routeParams, $location) {
 			$scope.next = evt.data.next || null;
 			$scope.range = evt.data.range;
 			$scope.more = !!evt.data.more;
+			$scope.total = evt.data.total;
 
 			if (evt.data.messages) {
 				$scope.pushMessages(evt.data.messages);
@@ -665,6 +671,7 @@ function ThreadCtrl($rootScope, $scope, $routeParams, $location) {
 
 	$scope.$on("!get", function(nm, evt) {
 		$scope.error = evt.data.error;
+
 	});
 
 	if (!$rootScope.currentServer) {

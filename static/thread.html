@@ -8,18 +8,30 @@
 		<span ng-show="!filter">
 			{{title}}
 		</span>
-		<div style="font-size: 9pt;" ng-show="_tags">
-			<ul class="inlineList">
+		<div style="font-size: 9pt;" ng-show="tags.length > 0">
+			<ul class="inlineList tag-list">
 				<li ng-repeat="tag in tags">
 					<a ng-href="#/threads/{{tag}}">{{tag}}</a>
 				</li>
 			</ul>
 		</div>
 </div>
-<div style="margin-top: 0.2em; text-align: right;" ng-click="reply()" ng-show="false">
-	<button ng-click="reply()">&#x270e;</button>
-</div>
 <ul>
+	<li ng-show="next">
+		<div class="prevNext">
+			<div class="clickyBox littleButton" ng-click="_bottom()">
+				↓ Bottom
+			</div>
+			<!--
+			<div class="clickyBox littleButton" ng-click="reply()">
+				新 Newest
+			</div>
+			-->
+			<div class="clickyBox littleButton" ng-click="reply()">
+				&#x270e; Reply
+			</div>
+		</div>
+	</li>
 	<li ng-repeat="message in messages">
 		<div class="messageTop" ng-init="canFilter=currentServer.supports('filter')">
 			<span ng-show="canFilter">

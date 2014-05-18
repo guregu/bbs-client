@@ -168,6 +168,10 @@ body {
     width: 100%;
 }
 
+.tag-list a:visited, .tag-list a {
+	color: black;
+}
+
 
 /* ETI compat */
 .quoted-message{border-left:2px solid #144fae;color:#144fae;padding-left:8px}
