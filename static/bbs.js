@@ -49,21 +49,21 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 		var self = this;
 
 		this.maybeConnect = function() {
-			if (self.realtime) {
-				self.connect();
+			if (this.realtime) {
+				this.connect();
 			}
 		}
 
 		this.connect = function() {
 			if (WebSocket == void(0)) {
 				console.log("Couldn't websocket");
-				self.realtime = false;
+				this.realtime = false;
 				return;
 			}
 
-			self.realtime = true;
-			self.socket = new ReconnectingWebSocket(self.wsURL);
-			self.socket.onopen = function() {
+			this.realtime = true;
+			this.socket = new ReconnectingWebSocket(this.wsURL);
+			this.socket.onopen = function() {
 				console.log("Realtime: connected.");
 				if (self.session) {
 					self.relogin(self.session);
@@ -73,13 +73,13 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 				});
 				self.sendQueue = [];
 			};
-			self.socket.onclose = function() {
+			this.socket.onclose = function() {
 				console.log("Realtime: disconnected.");
 			};
-			self.socket.onerror = function (error) {
+			this.socket.onerror = function (error) {
 
 			};
-			self.socket.onmessage = function(evt) {
+			this.socket.onmessage = function(evt) {
 				var data = angular.fromJson(evt.data);
 				self.receive(data, true);
 			};
@@ -87,21 +87,21 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 
 		this.send = function(cmd) {
 			// websocket sends
-			if (self.realtime) {
-				if (self.socket && self.socket.readyState == 1) {
+			if (this.realtime) {
+				if (this.socket && this.socket.readyState == 1) {
 					console.dir(cmd);
-					self.socket.send(angular.toJson(cmd));
+					this.socket.send(angular.toJson(cmd));
 				} else {
-					self.sendQueue.push(cmd);
+					this.sendQueue.push(cmd);
 				}
 				return;
 			}
 
 			// http sends
-			if (self.session) {
-				cmd.session = self.session;
+			if (this.session) {
+				cmd.session = this.session;
 			}
-			$http.post(self.url, cmd).success(function(recv) {
+			$http.post(this.url, cmd).success(function(recv) {
 				self.receive(recv);
 			});
 		}
@@ -110,7 +110,7 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 			console.log(data);
 			if (data.cmd != "error") {
 				$rootScope.$broadcast("#" + data.cmd, {
-					server: self,
+					server: this,
 					data: data
 				});
 			} else {
@@ -119,7 +119,7 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 					data.wrt = "session";
 				}
 				$rootScope.$broadcast("!" + data.wrt, {
-					server: self,
+					server: this,
 					data: data
 				});
 			}
@@ -129,60 +129,60 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 		}
 
 		this.init = function() {
-			self.maybeConnect();
+			this.maybeConnect();
 		}
 
 		// update this bbs with data from "hello" cmd
 		this.refresh = function(data) {
-			self.name = data.name;
-			self.desc = data.desc;
-			self.access = data.access;
-			self.lists = data.lists || [];
-			self.options = data.options;
-			self.formats = data.format || ["text"];
-			self.defaultFormat = self.formats[0];
-			self.wsURL = data.realtime;
+			this.name = data.name;
+			this.desc = data.desc;
+			this.access = data.access;
+			this.lists = data.lists || [];
+			this.options = data.options;
+			this.formats = data.format || ["text"];
+			this.defaultFormat = this.formats[0];
+			this.wsURL = data.realtime;
 
-			if (self.access.user && (self.access.user["get"] || self.access.user["list"])) {
-				self.requiresLogin = true;
+			if (this.access.user && (this.access.user["get"] || this.access.user["list"])) {
+				this.requiresLogin = true;
 			}
 
-			self.init();
+			this.init();
 		} 
 
 		this.serialize = function() {
-			return angular.toJson(self);
+			return angular.toJson(this);
 		}
 
 		this.deserialize = function(b) {
-			angular.extend(self, b);
-			self.init();
+			angular.extend(this, b);
+			this.init();
 		}
 
 		this.supports = function(opt) {
-			return self.options.indexOf(opt) != -1;
+			return this.options.indexOf(opt) != -1;
 		}
 
 		this.guestsCan = function(cmd) {
-			return self.access.guest && self.access.guest.indexOf(cmd) != -1;
+			return this.access.guest && this.access.guest.indexOf(cmd) != -1;
 		}
 
 		this.usersCan = function(cmd) {
-			return self.access.user && self.access.user.indexOf(cmd) != -1;
+			return this.access.user && this.access.user.indexOf(cmd) != -1;
 		}
 
 		this.can = function(cmd) {
-			return (self.guestsCan(cmd) || self.usersCan(cmd));
+			return (this.guestsCan(cmd) || this.usersCan(cmd));
 		}
 
 		this.hello = function() {
-			self.send({
+			this.send({
 				cmd: "hello"
 			});
 		}
 
 		this.login = function(username, password) {
-			self.send({
+			this.send({
 				cmd: "login",
 				username: username,
 				password: password,
@@ -191,7 +191,7 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 		}
 
 		this.relogin = function(session) {
-			self.send({
+			this.send({
 				cmd: "login",
 				session: session,
 				version: 0
@@ -199,7 +199,7 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 		}
 
 		this.register = function(u, p) {
-			self.send({
+			this.send({
 				cmd: "register",
 				username: u,
 				password: p
@@ -207,14 +207,14 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 		}
 
 		this.logout = function() {
-			if (self.loggedIn) {
-				self.send({
+			if (this.loggedIn) {
+				this.send({
 					cmd: "logout"
 				});
 			}	
-			self.loggedIn = false;
-			self.session = false;
-			self.username = null;
+			this.loggedIn = false;
+			this.session = false;
+			this.username = null;
 		}
 
 		this.list = function(type, query, token) {
@@ -228,14 +228,14 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 			if (token) {
 				cmd.token = token;
 			}
-			self.send(cmd);
+			this.send(cmd);
 		}
 
 		this.get = function(id, token, filter, format) {
 			var cmd = {
 				cmd: "get",
 				id: id,
-				format: format || self.defaultFormat
+				format: format || this.defaultFormat
 			}
 			if (token) {
 				cmd.token = token;
@@ -244,7 +244,7 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 				cmd.filter = filter;
 			}
 			console.log(cmd);
-			self.send(cmd);
+			this.send(cmd);
 		}
 
 		this.getRange = function(id, range, filter, format) {
@@ -252,13 +252,13 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 				cmd: "get",
 				id: id,
 				range: range,
-				format: format || self.defaultFormat
+				format: format || this.defaultFormat
 			}
 			if (filter) {
 				cmd.filter = filter;
 			}
 			console.log(cmd);
-			self.send(cmd);
+			this.send(cmd);
 		}
 
 		this.reply = function(id, body, format) {
@@ -268,7 +268,7 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 				body: body,
 				format: format
 			};
-			self.send(cmd);
+			this.send(cmd);
 		}
 
 		this.post = function(title, body, format, tags) {
@@ -281,14 +281,14 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 			if (tags) {
 				cmd.tags = tags;
 			}
-			self.send(cmd);
+			this.send(cmd);
 		}
 
 		this.home = function() {
-			if (self.requiresLogin && !self.loggedIn) {
+			if (this.requiresLogin && !this.loggedIn) {
 				return "/login";
 			}
-			if (self.lists.indexOf("board") != -1) {
+			if (this.lists.indexOf("board") != -1) {
 				return "/boards";
 			}
 			return "/threads";
