@@ -48,16 +48,24 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 
 		var self = this;
 
-		this.startWS = function() {
-			//self.connect();
+		this.maybeConnect = function() {
+			if (self.realtime) {
+				self.connect();
+			}
 		}
 
 		this.connect = function() {
+			if (WebSocket == void(0)) {
+				console.log("Couldn't websocket");
+				self.realtime = false;
+				return;
+			}
+
 			self.realtime = true;
 			self.socket = new ReconnectingWebSocket(self.wsURL);
 			self.socket.onopen = function() {
 				console.log("Realtime: connected.");
-				if (self.session != null) {
+				if (self.session) {
 					self.relogin(self.session);
 				}
 				angular.forEach(self.sendQueue, function(msg) {
@@ -107,6 +115,9 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 				});
 			} else {
 				console.log("error: " + data.wrt);
+				if (data.error == "session") {
+					data.wrt = "session";
+				}
 				$rootScope.$broadcast("!" + data.wrt, {
 					server: self,
 					data: data
@@ -115,6 +126,10 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 			if (apply) {
 				$rootScope.$apply();
 			}
+		}
+
+		this.init = function() {
+			self.maybeConnect();
 		}
 
 		// update this bbs with data from "hello" cmd
@@ -132,48 +147,16 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 				self.requiresLogin = true;
 			}
 
-			if (self.wsURL) {
-				self.startWS();
-			}
+			self.init();
 		} 
 
 		this.serialize = function() {
-			return angular.toJson({
-				url: self.url,
-				name: self.name,
-				desc: self.desc,
-				access: self.access,
-				lists: self.lists,
-				options: self.options,
-				bookmarks: self.bookmarks,
-				formats: self.formats,
-				session: self.session,
-				loggedIn: self.loggedIn,
-				requiresLogin: self.requiresLogin,
-				username: self.username,
-				wsURL: self.wsURL
-			});
+			return angular.toJson(self);
 		}
 
-		this.deserialze = function(b) {
-			self.url = b.url;
-			self.name = b.name;
-			self.desc = b.desc;
-			self.access = b.access;
-			self.lists = b.lists;
-			self.options = b.options;
-			self.formats = b.formats;
-			self.defaultFormat = b.formats[0];
-			self.bookmarks = b.bookmarks;
-			self.session = b.session;
-			self.loggedIn = b.loggedIn;
-			self.requiresLogin = b.requiresLogin;
-			self.username = b.username;
-			self.wsURL = b.wsURL;
-
-			if (self.wsURL) {
-				self.startWS();
-			}
+		this.deserialize = function(b) {
+			angular.extend(self, b);
+			self.init();
 		}
 
 		this.supports = function(opt) {
@@ -430,7 +413,7 @@ bbsApp.run(function ($rootScope, Servers) {
 		var data = angular.fromJson(localStorage["current"]);
 		Servers.add(data.url);
 		var srv = Servers.get(data.url);
-		srv.deserialze(data);
+		srv.deserialize(data);
 		$rootScope.currentServer = srv;
 	}
 });
@@ -514,6 +497,20 @@ function LoginCtrl($rootScope, $scope, $location) {
 }
 
 function HomeCtrl($rootScope, $location, $scope) {
+	$scope.supportsRealtime = function() {
+		return WebSocket != void(0);
+	}
+
+	$scope.realtime = function() {
+		return $rootScope.currentServer.realtime;
+	}
+
+	$scope.toggleRealtime = function() {
+		$rootScope.currentServer.realtime = !$rootScope.currentServer.realtime;
+		$rootScope.currentServer.maybeConnect();
+		localStorage["current"] = $rootScope.currentServer.serialize();
+	}
+
 	$scope.logout = function() {
 		$rootScope.currentServer.logout();
 	}

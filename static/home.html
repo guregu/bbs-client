@@ -10,6 +10,14 @@
 	</span>
 </div>
 <ul>
+	<li ng-show="supportsRealtime()">
+		<div class="clickyBox" ng-click="toggleRealtime()" ng-if="realtime()">
+			✡ Disable realtime
+		</div>
+		<div class="clickyBox" ng-click="toggleRealtime()" ng-if="!realtime()">
+			✌ Enable realtime
+		</div>
+	</li>
 	<li ng-show="currentServer.loggedIn">
 		<div class="clickyBox" ng-click="logout()">
 			&times; Log out
@@ -17,7 +25,7 @@
 	</li>
 	<li>
 		<div class="clickyBox" ng-click="disconnect()">
-			&times; Disconnect
+			&times; Switch servers
 		</div>
 	</li>
 </ul>
