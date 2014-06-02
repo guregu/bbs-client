@@ -88,8 +88,11 @@
 		</div>
 		<div ng-if="replyVisible" class="clickyBox">
 			&#x270e; Reply <br>
+			<div class="errorBox" ng-if="error">
+				{{error}}
+			</div>
 			<form ng-submit="reply()">
-				<textarea ng-model="body" style="min-height: 5em; width: 100%"></textarea>
+				<textarea ng-model="replyBody" style="min-height: 5em; width: 100%"></textarea>
 				<button type="submit" style="width: 100%;">Post</button>
 			</form>
 		</div>
