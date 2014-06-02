@@ -52,7 +52,7 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 			if (this.realtime) {
 				this.connect();
 			} else {
-				if (this.socket && this.socket.readyState == 1) {
+				if (this.socket && this.socket.readyState == 1 && this.socket.close) {
 					// disconnect
 					this.socket.close();
 				}
