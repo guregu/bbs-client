@@ -685,7 +685,7 @@ function ThreadCtrl($rootScope, $scope, $routeParams, $location) {
 		}
 		var ct = angular.fromJson(data);
 		var start = (ct.posts - ct.unread) + 1;
-		$rootScope.currentServer.getRange($scope.id, {start: start, end: start + grab - 1});
+		$rootScope.currentServer.getRange($scope.id, {start: start, end: start + grab - 1}, $scope.filter);
 		ct.unread = Math.max(ct.unread - grab, 0);
 		sessionStorage["ct:" + $scope.id] = angular.toJson(ct);
 	}
@@ -699,7 +699,7 @@ function ThreadCtrl($rootScope, $scope, $routeParams, $location) {
 		$rootScope.currentServer.getRange($scope.id, {
 			start: Math.max($scope.range.start - grab, 1),
 			end: $scope.range.start - 1
-		});
+		}, $scope.filter);
 	}
 
 	$scope.hasLater = function() {
@@ -793,8 +793,10 @@ function ThreadCtrl($rootScope, $scope, $routeParams, $location) {
 				ct.unread = Math.max(ct.unread - grab, 0);
 				sessionStorage["ct:" + $scope.id] = angular.toJson(ct);
 			} else {
-				// get the last 50 posts
-				$rootScope.currentServer.getRange($scope.id, {start: Math.max(ct.posts - grab, 1), end: Math.max(ct.posts, grab)});
+				// get the first 50 posts
+				$rootScope.currentServer.get($scope.id, null, $scope.filter);
+				// get the latest 50 posts
+				//$rootScope.currentServer.getRange($scope.id, {start: Math.max(ct.posts - grab, 1), end: Math.max(ct.posts, grab)});
 			}
 		}
 	}
