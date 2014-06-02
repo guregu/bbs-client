@@ -156,7 +156,9 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 		} 
 
 		this.serialize = function() {
-			return angular.toJson(this);
+			var data = angular.toJson(this);
+			delete data.socket;
+			return data;
 		}
 
 		this.deserialize = function(b) {
