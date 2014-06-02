@@ -16,6 +16,7 @@
 			</ul>
 		</div>
 </div>
+{{range}}
 <ul>
 	<!--
 	<li ng-show="next">
@@ -32,7 +33,12 @@
 		</div>
 	</li>
 	-->
-	<li ng-repeat="message in messages">
+	<li ng-if="hasEarlier()">
+		<div class="clickyBox" ng-click="loadEarlier()">
+			← Earlier posts ({{range.start - 1}} more)
+		</div>
+	</li>
+	<li ng-repeat="message in messages | removeUndefined" id="msg:{{message.no}}">
 		<div class="messageTop" ng-init="canFilter=currentServer.supports('filter')">
 			<span ng-show="canFilter">
 				<a ng-href="#/get/{{id}}/{{message.user_id || message.user}}" style="text-decoration: none;">{{message.user}}</a>
@@ -57,7 +63,13 @@
 			Loading...
 		</div>
 	</li>
-	<li ng-show="next">
+	<li ng-show="messages.length > 0">
+		<div class="clickyBox" ng-click="loadLater()">
+			→ Later posts <span ng-if="total - range.end > 0">({{total - range.end}} more)</span>
+		</div>
+	</li>
+	<!-- 
+	<li ng-if="next">
 		<div class="prevNext">
 			<div class="clickyBox littleButton" ng-click="loadMore()">
 				→ More
@@ -70,12 +82,20 @@
 			</div>
 		</div>
 	</li>
+	-->
 	<li ng-show="!closed">
-		<div class="clickyBox" ng-click="reply()">
+		<div ng-show="!replyVisible" class="clickyBox" ng-click="toggleReply()">
 			&#x270e; Reply
 		</div>
+		<div ng-if="replyVisible" class="clickyBox">
+			&#x270e; Reply <br>
+			<form ng-submit="reply()">
+				<textarea ng-model="body" style="min-height: 5em; width: 100%"></textarea>
+				<button type="submit" style="width: 100%;">Post</button>
+			</form>
+		</div>
 	</li>
-	<li ng-show="closed">
+	<li ng-if="closed">
 		<div class="clickyBox">
 			Thread is closed, can't reply.
 		</div>

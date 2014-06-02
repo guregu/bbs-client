@@ -51,6 +51,11 @@ bbsApp.factory('BBS', function($http, $rootScope, $location) {
 		this.maybeConnect = function() {
 			if (this.realtime) {
 				this.connect();
+			} else {
+				if (this.socket && this.socket.readyState == 1) {
+					// disconnect
+					this.socket.close();
+				}
 			}
 		}
 
@@ -365,11 +370,34 @@ bbsApp.factory('Servers', function($rootScope, BBS) {
 	return Servers;
 });
 
+bbsApp.filter('removeUndefined', function(){
+    return function(list){
+        var results = [];
+        angular.forEach(list, function(item, key) {
+            if (item != void(0)){
+                results.push(item);
+            }
+        });
+        return results;
+    }
+});
+
+
 bbsApp.filter('ago', function() {
 	return function(input) {
 		return moment(input).fromNow();
 	}
 })
+
+// bbsApp.directive('scrollIf', function () {
+//   return function (scope, element, attributes) {
+//     setTimeout(function () {
+//       if (scope.$eval(attributes.scrollIf)) {
+//         window.scrollTo(0, element[0].offsetTop - 100)
+//       }
+//     });
+//   }
+// });
 
 bbsApp.directive('markdown', function() {
   marked.setOptions({
@@ -590,19 +618,58 @@ function ThreadCtrl($rootScope, $scope, $routeParams, $location) {
 	$scope.format = null;
 	$scope.messages = [];
 	$scope.next = null;
-	$scope.range = { start: 0, end: 0 }
+	$scope.range = null;
 	$scope.total = null;
+	// reply box stuff
+	$scope.replyBody = "";
+	$scope.replyFormat = "text";
+	$scope.replyVisible = false;
 
 	var fetchAll = false;
+	var grab = 50;
+	var snap = false;
 
-	$scope.pushMessages = function(msgs) {
-		// TODO: don't blindly concat, instead keep an index of msgids
-		$scope.messages = $scope.messages.concat(msgs);
+	$scope.pushMessages = function(msgs, range) {
+		angular.forEach(msgs, function(msg, i) {
+			msg.no = i + range.start;
+			$scope.messages[msg.no - 1] = msg;
+		});
+		if ($scope.range) {
+			$scope.range = {
+				start: Math.min($scope.range.start, range.start),
+				end: Math.max($scope.range.end, range.end)
+			};
+		} else {
+			$scope.range = range;
+		}
+
+		// check our unread cache
+		var data = sessionStorage["ct:" + $scope.id];
+		if (data) {
+			var ct = angular.fromJson(data);
+			if ((ct.posts - $scope.range.end) < ct.unread) {
+				ct.unread = Math.max(ct.posts - $scope.range.end, 0);
+				sessionStorage["ct:" + $scope.id] = angular.toJson(ct);
+			}
+		}
+
+		if (snap) {
+			setTimeout(function() {
+				var e = document.getElementById("msg:" + range.end);
+				if (e) {
+					e.scrollIntoView(true);
+				}
+				snap = false;
+			}, 0);
+		}
 	}
 
 	$scope.hasUnread = function() {
 		var data = sessionStorage["ct:" + $scope.id];
 		if (!data) {
+			return false;
+		}
+		if (!$scope.range) {
 			return false;
 		}
 		var ct = angular.fromJson(data);
@@ -615,11 +682,33 @@ function ThreadCtrl($rootScope, $scope, $routeParams, $location) {
 			return;
 		}
 		var ct = angular.fromJson(data);
-		var start = (ct.posts - ct.unread) + 1
-		var grab = 50;
+		var start = (ct.posts - ct.unread) + 1;
 		$rootScope.currentServer.getRange($scope.id, {start: start, end: start + grab - 1});
 		ct.unread = Math.max(ct.unread - grab, 0);
 		sessionStorage["ct:" + $scope.id] = angular.toJson(ct);
+	}
+
+	$scope.hasEarlier = function() {
+		return $scope.range && ($scope.range.start > 1);
+	}
+
+	$scope.loadEarlier = function() {
+		snap = true;
+		$rootScope.currentServer.getRange($scope.id, {
+			start: Math.max($scope.range.start - grab, 1),
+			end: $scope.range.start - 1
+		});
+	}
+
+	$scope.hasLater = function() {
+		return $scope.range && ($scope.range.end < $scope.total);
+	}
+
+	$scope.loadLater = function() {
+		$rootScope.currentServer.getRange($scope.id, {
+			start: $scope.range.end + 1,
+			end: $scope.range.end + grab
+		});
 	}
 
 	$scope.loadMore = function() {
@@ -631,9 +720,12 @@ function ThreadCtrl($rootScope, $scope, $routeParams, $location) {
 		$scope.loadMore();
 	}
 
+	$scope.toggleReply = function() {
+		$scope.replyVisible = !$scope.replyVisible;
+	}
+
 	$scope.reply = function() {
-		// TODO: make modal instead of redirect
-		$location.path("/reply/" + $scope.id);
+		$rootScope.currentServer.reply($scope.id, $scope.replyBody, $scope.replyFormat);
 	}
 
 	$scope.$on("#msg", function(nm, evt) {
@@ -646,12 +738,11 @@ function ThreadCtrl($rootScope, $scope, $routeParams, $location) {
 			$scope.tags = evt.data.tags || null;
 			$scope.format = evt.data.format;
 			$scope.next = evt.data.next || null;
-			$scope.range = evt.data.range;
 			$scope.more = !!evt.data.more;
 			$scope.total = evt.data.total;
 
-			if (evt.data.messages) {
-				$scope.pushMessages(evt.data.messages);
+			if (evt.data.messages.length > 0) {
+				$scope.pushMessages(evt.data.messages, evt.data.range);
 			}
 
 			if (fetchAll) {
@@ -671,10 +762,38 @@ function ThreadCtrl($rootScope, $scope, $routeParams, $location) {
 
 	});
 
+	$scope.$on("#ok", function(nm, evt) {
+		if (evt.data.wrt == "reply") {
+			$scope.replyVisible = false;
+		}
+	});
+
+	$scope.$on("!reply", function(nm, evt) {
+		$scope.error = evt.data.error;
+	});
+
 	if (!$rootScope.currentServer) {
 		$location.path("/servers");
 	} else {
-		$rootScope.currentServer.get($scope.id, $scope.next, $scope.filter);
+		var data = sessionStorage["ct:" + $scope.id];
+		if (!data) {
+			// no unread messages so just grab the first few
+			$rootScope.currentServer.get($scope.id, $scope.next, $scope.filter);
+		} else {
+			// if we have unread messages, grab those by default
+			var ct = angular.fromJson(data);
+			if (ct.unread > 0) {
+				$rootScope.currentServer.getRange($scope.id, {
+					start: ct.posts - ct.unread + 1,
+					end: Math.min(ct.posts - ct.unread + grab, ct.posts)
+				});
+				ct.unread = Math.max(ct.unread - grab, 0);
+				sessionStorage["ct:" + $scope.id] = angular.toJson(ct);
+			} else {
+				// get the last 50 posts
+				$rootScope.currentServer.getRange($scope.id, {start: Math.max(ct.posts - grab, 1), end: Math.max(ct.posts, grab)});
+			}
+		}
 	}
 }
 
