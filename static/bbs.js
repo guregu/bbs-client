@@ -766,6 +766,7 @@ function ThreadCtrl($rootScope, $scope, $routeParams, $location) {
 		if (evt.data.wrt == "reply") {
 			$scope.replyVisible = false;
 		}
+		$scope.error = null;
 	});
 
 	$scope.$on("!reply", function(nm, evt) {
