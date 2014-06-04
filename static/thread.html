@@ -52,7 +52,7 @@
 		<div style="margin-top: 0.2em; margin-bottom: 0.2em;" ng-show="!message.body">
 		</div>
 		<div class="clickyBox" ng-if="message.body">
-			<span ng-if="format == 'html'" ng-bind-html-unsafe="message.body"></span>
+			<span ng-if="format == 'html'" ng-bind-html="message.body"></span>
 			<span ng-if="format == 'markdown'"><markdown ng-model="message.body"></markdown></span>
 			<span ng-if="format == 'text' || !format">{{message.body}}</span>
 		</div>

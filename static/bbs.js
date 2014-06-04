@@ -1,4 +1,4 @@
-var bbsApp = angular.module('bbs', []);
+var bbsApp = angular.module('bbs', ['ngRoute', 'ngSanitize']);
 
 bbsApp.run(function($rootScope) {
 	$rootScope.currentServer = null;
